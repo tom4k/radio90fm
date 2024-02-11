@@ -86,7 +86,7 @@ class Header extends StatelessWidget {
               width: 300,
             ),
           ),
-          // const Player(),
+          const Player(),
         ],
       ),
     );
