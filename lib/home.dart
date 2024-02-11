@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio90fm/mydrawer.dart';
 import 'package:radio90fm/player.dart';
 
 class Home extends StatelessWidget {
@@ -6,26 +7,47 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var scaffoldKey = GlobalKey<ScaffoldState>();
     return MaterialApp(
       home: Scaffold(
-        body: Container(
-          padding: const EdgeInsetsDirectional.all(20),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.black, Color.fromARGB(255, 67, 4, 0)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+        key: scaffoldKey,
+        endDrawerEnableOpenDragGesture: false,
+        drawer: const MainDrawer(),
+        body: Stack(children: [
+          Container(
+            padding: const EdgeInsetsDirectional.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black, Color.fromARGB(255, 67, 4, 0)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Header(),
+                Footer(),
+              ],
             ),
           ),
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Header(),
-              Footer(),
-            ],
+          Positioned(
+            top: 50,
+            left: 10,
+            child: IconButton(
+              icon: Icon(
+                Icons.menu,
+                size: 40,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                print("Clickkkkkk");
+                scaffoldKey.currentState!.openDrawer();
+              },
+            ),
           ),
-        ),
+        ]),
       ),
     );
   }
