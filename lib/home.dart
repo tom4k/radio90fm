@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:radio90fm/mydrawer.dart';
 import 'package:radio90fm/player.dart';
+
+import 'package:share_plus/share_plus.dart';
 
 class Home extends StatelessWidget {
   const Home({Key? key}) : super(key: key);
@@ -9,6 +13,7 @@ class Home extends StatelessWidget {
   Widget build(BuildContext context) {
     var scaffoldKey = GlobalKey<ScaffoldState>();
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         key: scaffoldKey,
         endDrawerEnableOpenDragGesture: false,
@@ -42,8 +47,21 @@ class Home extends StatelessWidget {
                 color: Colors.white,
               ),
               onPressed: () {
-                print("Clickkkkkk");
                 scaffoldKey.currentState!.openDrawer();
+              },
+            ),
+          ),
+          Positioned(
+            top: 50,
+            right: 10,
+            child: IconButton(
+              icon: Icon(
+                Icons.share,
+                size: 40,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Share.share('Click Here to install Radio 90 Fm App to your mobile. \n https://onelink.to/243uae');
               },
             ),
           ),
@@ -96,7 +114,7 @@ class Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(
-        top: 50,
+        top: 45,
       ),
       margin: const EdgeInsets.only(bottom: 0),
       child: Column(

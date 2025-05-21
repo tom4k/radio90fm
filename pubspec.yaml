@@ -1,7 +1,7 @@
 name: radio90fm
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.2
 
 environment:
   sdk: '>=3.2.6 <4.0.0'
@@ -12,6 +12,13 @@ dependencies:
   just_audio: ^0.9.36
   text_scroll: ^0.2.0
   just_audio_background: ^0.0.1-beta.11
+  webview_flutter: ^4.7.0
+  font_awesome_flutter: ^10.7.0
+  url_launcher: ^6.2.4
+  flutter_launcher_icons: ^0.13.1
+  share_plus: ^7.2.2
+  firebase_core: ^2.27.0
+  firebase_database: ^10.4.9
 
 
 
@@ -20,9 +27,29 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^2.0.0
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#000000"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#000000"
+    theme_color: "#000000"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/images/logo.png"
+
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/icon.png
     - assets/images/logo.png
+    - assets/images/logo2.png
