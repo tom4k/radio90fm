@@ -11,7 +11,7 @@ class Player extends StatefulWidget {
   State<Player> createState() => _PlayerState();
 }
 
-class _PlayerState extends State<Player> {
+class _PlayerState extends State<Player> with WidgetsBindingObserver {
   late AudioPlayer _audioPlayer;
   String _url = "";
   DatabaseReference _urlref = FirebaseDatabase.instance.ref('/url');
@@ -25,14 +25,14 @@ class _PlayerState extends State<Player> {
         _url = event.snapshot.value.toString();
       });
     });
-    
+
     _audioPlayer = AudioPlayer()
       //..setUrl('https://d3i39hzrvzmmlb.cloudfront.net/ajceradio.m3u8');
       ..setAudioSource(AudioSource.uri(
         //Uri.parse('https://icecast.octosignals.com/radio90_final'),
         //Uri.parse('http://stream.cseajce.in:8088/radio90'),
         //Uri.parse('http://3.110.250.189:8088/radio90'),
-        Uri.parse('http://radio90.vimalabooks.com:8088/radio90'),
+        Uri.parse('https://icecast.octosignals.com/radio90_final'),
         //Uri.parse('http://radio90.xyz:8088/radio90'),
         tag: MediaItem(
           // Specify a unique ID for each media item:
@@ -46,11 +46,19 @@ class _PlayerState extends State<Player> {
       ));
 
     _audioPlayer.play();
+
+
+
+    @override
+    void dispose() {
+      WidgetsBinding.instance.removeObserver(this); // Remove observer
+      _audioPlayer.dispose();
+      super.dispose();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    
     return Container(
       margin: const EdgeInsets.only(top: 100),
       child: Center(

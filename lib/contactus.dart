@@ -44,11 +44,7 @@ class Contact extends StatelessWidget {
                 style: TextStyle(fontSize: 20),
                 textAlign: TextAlign.left,
               ),
-              const Text(
-                "Mobile No: 9495810931",
-                style: TextStyle(fontSize: 20),
-                textAlign: TextAlign.left,
-              ),
+              
               const SizedBox(
                 height: 10,
               ),
