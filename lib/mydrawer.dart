@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'package:radio90fm/aboutus.dart';
-import 'package:radio90fm/contactus.dart';
-import 'package:radio90fm/follow.dart';
+import 'package:radio90fm/screens/about/about_screen.dart';
+import 'package:radio90fm/screens/contact/contact_screen.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
@@ -10,55 +8,36 @@ class MainDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Color.fromARGB(255, 67, 4, 0),
-      child: Column(children: [
-        DrawerHeader(
-          child: Image.asset('assets/images/logo.png'),
-          padding: const EdgeInsets.all(20),
-        ),
-        Divider(),
-        ListTile(
-          leading: Icon(
-            Icons.info,
-            color: Colors.white,
-            size: 30,
+      backgroundColor: const Color(0xFF141414),
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Color(0xFF0F0F0F)),
+            child: Center(
+              child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+            ),
           ),
-          title: Text(
-            "About Us",
-            style: TextStyle(color: Colors.white, fontSize: 24),
+          ListTile(
+            leading: const Icon(Icons.info_outline_rounded, color: Colors.red),
+            title: const Text("About Us", style: TextStyle(color: Colors.white, fontSize: 18)),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const AboutScreen()),
+              );
+            },
           ),
-          onTap: () {
-            Navigator.of(context)
-                .push(MaterialPageRoute(builder: ((context) => About())));
-          },
-        ),
-        Divider(),
-        ListTile(
-          leading: Icon(
-            Icons.contact_phone,
-            color: Colors.white,
-            size: 30,
+          const Divider(color: Color(0xFF262626)),
+          ListTile(
+            leading: const Icon(Icons.contact_phone_rounded, color: Colors.red),
+            title: const Text("Contact Us", style: TextStyle(color: Colors.white, fontSize: 18)),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const ContactScreen()),
+              );
+            },
           ),
-          title: Text(
-            "Contact Us",
-            style: TextStyle(color: Colors.white, fontSize: 24),
-          ),
-          onTap: () {
-            Navigator.of(context)
-                .push(MaterialPageRoute(builder: ((context) => Contact())));
-          },
-        ),
-        Divider(),
-        Expanded(
-          child: SizedBox(
-            height: 50,
-          ),
-        ),
-        Follow(),
-        SizedBox(
-          height: 30,
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }

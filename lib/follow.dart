@@ -7,22 +7,22 @@ class Follow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  Column(
-      
+    return Column(
       children: [
-        Center(
+        const Center(
           child: Text(
             "Follow us on",
             style: TextStyle(color: Colors.white, fontSize: 18),
           ),
         ),
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
               onPressed: () {
                 launchUrl(Uri.parse('https://www.facebook.com/fm.radio90/'));
               },
-              icon: FaIcon(
+              icon: const FaIcon(
                 FontAwesomeIcons.facebook,
                 size: 30,
                 color: Colors.white,
@@ -32,7 +32,7 @@ class Follow extends StatelessWidget {
               onPressed: () {
                 launchUrl(Uri.parse('https://youtube.com/@radio90fm13'));
               },
-              icon: FaIcon(
+              icon: const FaIcon(
                 FontAwesomeIcons.youtube,
                 size: 30,
                 color: Colors.white,
@@ -42,7 +42,7 @@ class Follow extends StatelessWidget {
               onPressed: () {
                 launchUrl(Uri.parse('https://www.instagram.com/radio90.fm'));
               },
-              icon: FaIcon(
+              icon: const FaIcon(
                 FontAwesomeIcons.instagram,
                 size: 30,
                 color: Colors.white,
@@ -52,7 +52,7 @@ class Follow extends StatelessWidget {
               onPressed: () {
                 launchUrl(Uri.parse('https://wa.me/9048389090'));
               },
-              icon: FaIcon(
+              icon: const FaIcon(
                 FontAwesomeIcons.whatsapp,
                 size: 30,
                 color: Colors.white,
@@ -62,7 +62,7 @@ class Follow extends StatelessWidget {
               onPressed: () {
                 launchUrl(Uri.parse('https://twitter.com/Radio90FM_AJCE'));
               },
-              icon: FaIcon(
+              icon: const FaIcon(
                 FontAwesomeIcons.xTwitter,
                 size: 30,
                 color: Colors.white,
@@ -70,10 +70,11 @@ class Follow extends StatelessWidget {
             ),
             IconButton(
               onPressed: () {
-                launchUrl(Uri.parse(
-                    'https://open.spotify.com/show/68Ii81VKFBzRWKnEo2y1Oe'));
+                launchUrl(
+                  Uri.parse('https://open.spotify.com/show/68Ii81VKFBzRWKnEo2y1Oe'),
+                );
               },
-              icon: FaIcon(
+              icon: const FaIcon(
                 FontAwesomeIcons.spotify,
                 size: 30,
                 color: Colors.white,
