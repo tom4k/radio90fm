@@ -287,9 +287,11 @@ export default function DashboardPage() {
       <header className="border-b border-neutral-800/80 bg-neutral-900/80 sticky top-0 z-20 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-full bg-red-600 flex items-center justify-center font-black text-white shadow-lg shadow-red-950">
-              90
-            </div>
+            <img
+              src="/logo.png"
+              alt="Radio 90 FM"
+              className="h-10 w-10 object-contain rounded-full border border-neutral-800 bg-neutral-900 p-0.5 shadow-md shadow-red-950/60"
+            />
             <div>
               <h1 className="font-bold text-base text-white leading-none tracking-tight">
                 Radio 90 FM Admin Console

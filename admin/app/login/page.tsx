@@ -40,9 +40,11 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-neutral-950">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-red-600 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-red-900/50">
-            90 FM
-          </div>
+          <img
+            src="/logo.png"
+            alt="Radio 90 FM"
+            className="h-20 w-20 object-contain rounded-full shadow-2xl shadow-red-950/80 border border-neutral-800 bg-neutral-900 p-1"
+          />
         </div>
         <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-white">
           Radio 90 FM Administration
