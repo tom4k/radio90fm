@@ -97,29 +97,36 @@ export async function GET() {
       });
     }
 
-    // 2. Find currently scheduled program
+    // 2. Query all active programs
     const allActivePrograms = await db
       .select()
       .from(programs)
       .where(eq(programs.isActive, true))
       .orderBy(asc(programs.dayOfWeek), asc(programs.startMinutes));
 
-    let current = allActivePrograms.find(
-      (p) =>
-        p.dayOfWeek === dayOfWeek &&
-        p.startMinutes <= currentMinutes &&
-        currentMinutes < p.endMinutes
-    );
+    // 3. Find currently scheduled program for current day
+    const todaysPrograms = allActivePrograms.filter((p) => p.dayOfWeek === dayOfWeek);
 
-    // If no match found, find next program
-    let next = allActivePrograms.find(
-      (p) =>
-        p.dayOfWeek > dayOfWeek ||
-        (p.dayOfWeek === dayOfWeek && p.startMinutes > currentMinutes)
-    );
+    let current = todaysPrograms
+      .filter((p) => p.startMinutes <= currentMinutes)
+      .pop();
 
-    if (!next && allActivePrograms.length > 0) {
-      next = allActivePrograms[0]; // Wrap around to first program of the week
+    if (!current && allActivePrograms.length > 0) {
+      // Fallback to last program of previous day if before first program today
+      const prevDay = (dayOfWeek + 6) % 7;
+      const prevDayPrograms = allActivePrograms.filter((p) => p.dayOfWeek === prevDay);
+      current = prevDayPrograms.length > 0 ? prevDayPrograms[prevDayPrograms.length - 1] : allActivePrograms[0];
+    }
+
+    // 3. Find next program
+    let next: any = null;
+    if (current) {
+      const curIndex = allActivePrograms.findIndex((p) => p.id === current.id);
+      if (curIndex >= 0 && curIndex < allActivePrograms.length - 1) {
+        next = allActivePrograms[curIndex + 1];
+      } else if (allActivePrograms.length > 0) {
+        next = allActivePrograms[0]; // Wrap to week start
+      }
     }
 
     const resolvedPhone = current?.phoneNumber || config.defaultPhone;
@@ -138,16 +145,22 @@ export async function GET() {
               dayOfWeek: current.dayOfWeek,
               startMinutes: current.startMinutes,
               endMinutes: current.endMinutes,
+              enableCall: current.enableCall,
+              enableWhatsapp: current.enableWhatsapp,
+              phoneNumber: current.phoneNumber,
+              whatsappNumber: current.whatsappNumber,
               imageUrl: current.imageUrl,
             }
           : {
               id: "station_default",
               title: "Radio 90 FM Live",
-              description: "Celebration of Knowledge",
+              description: "Voice of Amal Jyothi",
               presenter: "Voice of Amal Jyothi",
               dayOfWeek,
               startMinutes: 0,
               endMinutes: 1440,
+              enableCall: true,
+              enableWhatsapp: true,
             },
         nextProgram: next
           ? {
@@ -156,6 +169,7 @@ export async function GET() {
               presenter: next.presenter,
               dayOfWeek: next.dayOfWeek,
               startMinutes: next.startMinutes,
+              endMinutes: next.endMinutes,
             }
           : null,
         contacts: {
