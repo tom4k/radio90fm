@@ -18,6 +18,7 @@ export default function DashboardPage() {
 
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isStreamBuffering, setIsStreamBuffering] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.8);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -142,14 +143,23 @@ export default function DashboardPage() {
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
-    if (isPlaying) {
+    if (isPlaying || isStreamBuffering) {
       audioRef.current.pause();
       setIsPlaying(false);
+      setIsStreamBuffering(false);
     } else {
+      setIsStreamBuffering(true);
       audioRef.current
         .play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => console.error("Audio playback error:", err));
+        .then(() => {
+          setIsPlaying(true);
+          setIsStreamBuffering(false);
+        })
+        .catch((err) => {
+          console.error("Audio playback error:", err);
+          setIsStreamBuffering(false);
+          setIsPlaying(false);
+        });
     }
   };
 
@@ -539,11 +549,15 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between border-b border-neutral-800/80 pb-4">
                   <div className="flex items-center space-x-3">
                     <span className="relative flex h-3 w-3">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
-                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isPlaying ? "bg-red-500" : "bg-emerald-500"}`}></span>
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isStreamBuffering ? "bg-amber-400" : isPlaying ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isStreamBuffering ? "bg-amber-500" : isPlaying ? "bg-red-500" : "bg-emerald-500"}`}></span>
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      {isPlaying ? "NOW BROADCASTING LIVE" : "LIVE ICECAST AUDIO STREAM"}
+                      {isStreamBuffering
+                        ? "CONNECTING & BUFFERING STREAM..."
+                        : isPlaying
+                        ? "NOW BROADCASTING LIVE"
+                        : "LIVE ICECAST AUDIO STREAM"}
                     </span>
                   </div>
 
@@ -557,15 +571,32 @@ export default function DashboardPage() {
                   ref={audioRef}
                   src={streamUrl || "https://icecast.octosignals.com/radio90_final"}
                   preload="none"
+                  onLoadStart={() => setIsStreamBuffering(true)}
+                  onWaiting={() => setIsStreamBuffering(true)}
+                  onCanPlay={() => setIsStreamBuffering(false)}
+                  onPlaying={() => {
+                    setIsStreamBuffering(false);
+                    setIsPlaying(true);
+                  }}
+                  onPause={() => {
+                    setIsStreamBuffering(false);
+                    setIsPlaying(false);
+                  }}
+                  onError={() => {
+                    setIsStreamBuffering(false);
+                    setIsPlaying(false);
+                  }}
                 />
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-1">
                   <div className="flex items-center space-x-5 w-full sm:w-auto">
                     <button
                       onClick={togglePlayPause}
-                      className="h-16 w-16 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-xl shadow-red-950/80 transition-all transform hover:scale-105 active:scale-95"
+                      className="h-16 w-16 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-xl shadow-red-950/80 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-90"
                     >
-                      {isPlaying ? (
+                      {isStreamBuffering ? (
+                        <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : isPlaying ? (
                         <span className="text-2xl font-bold">❚❚</span>
                       ) : (
                         <span className="text-2xl font-bold ml-1">▶</span>
