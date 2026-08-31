@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { programs } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
+import { seedScheduleIfNeeded } from "../../../../../scripts/seed-schedule";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    await seedScheduleIfNeeded();
+
     const list = await db
       .select()
       .from(programs)

@@ -87,7 +87,7 @@ const dayMap: Record<string, number> = {
   SUNDAY: 6,
 };
 
-async function seed() {
+export async function seedSchedule(exitOnFinish = false) {
   console.log("=== Seeding Initial Radio 90 FM Schedule ===");
 
   const lines = rawScheduleCSV.trim().split("\n");
@@ -165,8 +165,19 @@ async function seed() {
   } catch (err) {
     console.error("Error seeding schedule:", err);
   } finally {
-    process.exit(0);
+    if (exitOnFinish) process.exit(0);
   }
 }
 
-seed();
+export async function seedScheduleIfNeeded() {
+  const existing = await db.select().from(programs);
+  if (existing.length === 0) {
+    console.log("Programs table is empty. Auto-seeding initial schedule...");
+    await seedSchedule(false);
+  }
+}
+
+if (require.main === module) {
+  seedSchedule(true);
+}
+

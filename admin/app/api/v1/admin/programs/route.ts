@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { programs, auditLogs } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
+import { seedScheduleIfNeeded } from "../../../../../scripts/seed-schedule";
 import crypto from "crypto";
 import { z } from "zod";
 
@@ -32,6 +33,8 @@ export async function GET() {
   }
 
   try {
+    await seedScheduleIfNeeded();
+
     const list = await db
       .select()
       .from(programs)
