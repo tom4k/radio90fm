@@ -465,16 +465,27 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
-      {/* Top Navbar Header */}
-      <header className="border-b border-neutral-800/80 bg-neutral-900/80 sticky top-0 z-20 backdrop-blur-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      {/* PERSISTENT AUDIO ELEMENT - ALWAYS MOUNTED ACROSS ALL TABS */}
+      <audio
+        ref={audioRef}
+        src={streamUrl || "https://icecast.octosignals.com/radio90_final"}
+        preload="none"
+        onWaiting={() => setStreamState("buffering")}
+        onPlaying={() => setStreamState("playing")}
+        onPause={() => setStreamState("idle")}
+        onError={() => setStreamState("idle")}
+      />
+
+      {/* Top Navbar Header with PERSISTENT MINI PLAYER WIDGET */}
+      <header className="border-b border-neutral-800/80 bg-neutral-900/90 sticky top-0 z-30 backdrop-blur-md shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 shrink-0">
             <img
               src="/logo.png"
               alt="Radio 90 FM"
               className="h-10 w-10 object-contain rounded-full border border-neutral-800 bg-neutral-900 p-0.5 shadow-md shadow-red-950/60"
             />
-            <div>
+            <div className="hidden sm:block">
               <h1 className="font-bold text-base text-white leading-none tracking-tight">
                 Radio 90 FM Admin Console
               </h1>
@@ -482,11 +493,50 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-xs bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 px-3 py-1.5 rounded-full">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="font-medium">STREAM ONLINE</span>
+          {/* PERSISTENT TOP BAR MINI AUDIO PLAYER WIDGET */}
+          <div className="flex items-center space-x-3 bg-neutral-950/90 border border-neutral-800 px-3 py-1.5 rounded-2xl shadow-inner max-w-md w-full sm:w-auto justify-between sm:justify-start">
+            <button
+              onClick={togglePlayPause}
+              className="h-9 w-9 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-md transition transform hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
+              title={streamState === "playing" ? "Pause Stream" : "Play Stream"}
+            >
+              {streamState === "buffering" ? (
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : streamState === "playing" ? (
+                <span className="text-xs font-bold">❚❚</span>
+              ) : (
+                <span className="text-xs font-bold ml-0.5">▶</span>
+              )}
+            </button>
+
+            <div className="flex flex-col min-w-0 pr-2">
+              <div className="flex items-center space-x-1.5">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${streamState === "buffering" ? "bg-amber-400" : streamState === "playing" ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${streamState === "buffering" ? "bg-amber-500" : streamState === "playing" ? "bg-red-500" : "bg-emerald-500"}`}></span>
+                </span>
+                <span className="text-[11px] font-bold text-white truncate max-w-[150px] sm:max-w-[200px]">
+                  {streamState === "buffering"
+                    ? "Buffering Stream..."
+                    : streamState === "playing"
+                    ? (currentProgData?.title || "Broadcasting Live")
+                    : "Radio 90 FM Stream"}
+                </span>
+              </div>
+              <span className="text-[10px] text-neutral-400 font-mono truncate">
+                {streamState === "playing" ? "LIVE ON AIR" : "90.0 MHz Icecast"}
+              </span>
             </div>
+
+            {/* Equalizer Bars on Mini Player */}
+            <div className="hidden md:flex items-end space-x-0.5 h-4 px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded-md">
+              <span className={`w-0.5 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-3 animate-pulse" : "h-1"}`}></span>
+              <span className={`w-0.5 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-4 animate-bounce" : "h-1.5"}`}></span>
+              <span className={`w-0.5 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-2.5 animate-pulse" : "h-1"}`}></span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3 shrink-0">
             <button
               onClick={handleLogout}
               className="text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-3.5 py-1.5 rounded-lg transition"
@@ -634,17 +684,6 @@ export default function DashboardPage() {
                     90.0 MHz • Icecast Stream
                   </span>
                 </div>
-
-                {/* Audio Element */}
-                <audio
-                  ref={audioRef}
-                  src={streamUrl || "https://icecast.octosignals.com/radio90_final"}
-                  preload="none"
-                  onWaiting={() => setStreamState("buffering")}
-                  onPlaying={() => setStreamState("playing")}
-                  onPause={() => setStreamState("idle")}
-                  onError={() => setStreamState("idle")}
-                />
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-1">
                   <div className="flex items-center space-x-5 w-full sm:w-auto">
