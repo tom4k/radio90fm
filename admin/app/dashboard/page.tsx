@@ -17,8 +17,7 @@ export default function DashboardPage() {
   const [testingStream, setTestingStream] = useState(false);
 
   // Audio player state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isStreamBuffering, setIsStreamBuffering] = useState(false);
+  const [streamState, setStreamState] = useState<"idle" | "buffering" | "playing">("idle");
   const [audioVolume, setAudioVolume] = useState(0.8);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -163,24 +162,26 @@ export default function DashboardPage() {
   }
 
   const togglePlayPause = () => {
-    if (!audioRef.current) return;
-    if (isPlaying || isStreamBuffering) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-      setIsStreamBuffering(false);
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (streamState === "playing" || streamState === "buffering") {
+      audio.pause();
+      setStreamState("idle");
     } else {
-      setIsStreamBuffering(true);
-      audioRef.current
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-          setIsStreamBuffering(false);
-        })
-        .catch((err) => {
-          console.error("Audio playback error:", err);
-          setIsStreamBuffering(false);
-          setIsPlaying(false);
-        });
+      setStreamState("buffering");
+      audio.load();
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setStreamState("playing");
+          })
+          .catch((err) => {
+            console.error("Audio playback error:", err);
+            setStreamState("idle");
+          });
+      }
     }
   };
 
@@ -600,13 +601,13 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between border-b border-neutral-800/80 pb-4">
                   <div className="flex items-center space-x-3">
                     <span className="relative flex h-3 w-3">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying && isStreamBuffering ? "bg-amber-400" : isPlaying ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
-                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isPlaying && isStreamBuffering ? "bg-amber-500" : isPlaying ? "bg-red-500" : "bg-emerald-500"}`}></span>
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${streamState === "buffering" ? "bg-amber-400" : streamState === "playing" ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${streamState === "buffering" ? "bg-amber-500" : streamState === "playing" ? "bg-red-500" : "bg-emerald-500"}`}></span>
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      {isPlaying && isStreamBuffering
+                      {streamState === "buffering"
                         ? "CONNECTING & BUFFERING STREAM..."
-                        : isPlaying
+                        : streamState === "playing"
                         ? "NOW BROADCASTING LIVE"
                         : "LIVE ICECAST AUDIO STREAM"}
                     </span>
@@ -622,33 +623,21 @@ export default function DashboardPage() {
                   ref={audioRef}
                   src={streamUrl || "https://icecast.octosignals.com/radio90_final"}
                   preload="none"
-                  onWaiting={() => {
-                    if (isPlaying) setIsStreamBuffering(true);
-                  }}
-                  onCanPlay={() => setIsStreamBuffering(false)}
-                  onPlaying={() => {
-                    setIsStreamBuffering(false);
-                    setIsPlaying(true);
-                  }}
-                  onPause={() => {
-                    setIsStreamBuffering(false);
-                    setIsPlaying(false);
-                  }}
-                  onError={() => {
-                    setIsStreamBuffering(false);
-                    setIsPlaying(false);
-                  }}
+                  onWaiting={() => setStreamState("buffering")}
+                  onPlaying={() => setStreamState("playing")}
+                  onPause={() => setStreamState("idle")}
+                  onError={() => setStreamState("idle")}
                 />
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-1">
                   <div className="flex items-center space-x-5 w-full sm:w-auto">
                     <button
                       onClick={togglePlayPause}
-                      className="h-16 w-16 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-xl shadow-red-950/80 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-90"
+                      className="h-16 w-16 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-xl shadow-red-950/80 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
                     >
-                      {isPlaying && isStreamBuffering ? (
+                      {streamState === "buffering" ? (
                         <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : isPlaying ? (
+                      ) : streamState === "playing" ? (
                         <span className="text-2xl font-bold">❚❚</span>
                       ) : (
                         <span className="text-2xl font-bold ml-1">▶</span>
@@ -669,11 +658,11 @@ export default function DashboardPage() {
                   <div className="flex items-center space-x-6 w-full sm:w-auto justify-between sm:justify-end">
                     {/* Equalizer Bars Animation */}
                     <div className="flex items-end space-x-1 h-8 px-3 py-1 bg-neutral-950 border border-neutral-800 rounded-xl">
-                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-6 animate-pulse" : "h-2"}`}></span>
-                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-8 animate-bounce" : "h-3"}`}></span>
-                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-4 animate-pulse" : "h-2"}`}></span>
-                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-7 animate-bounce" : "h-4"}`}></span>
-                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-5 animate-pulse" : "h-2"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-6 animate-pulse" : "h-2"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-8 animate-bounce" : "h-3"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-4 animate-pulse" : "h-2"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-7 animate-bounce" : "h-4"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${streamState === "playing" ? "h-5 animate-pulse" : "h-2"}`}></span>
                     </div>
 
                     {/* Volume Slider */}
