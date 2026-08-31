@@ -17,9 +17,10 @@ class ListenScreen extends ConsumerWidget {
 
     final currentState = audioStateAsync.value ?? audioHandler.currentCustomState;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Station Logo Banner
@@ -242,8 +243,9 @@ class ListenScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPlayerControl(
     BuildContext context,

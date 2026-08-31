@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:radio90fm/app/theme.dart';
 import 'package:radio90fm/core/constants/app_constants.dart';
 import 'package:radio90fm/screens/listen/listen_screen.dart';
 import 'package:radio90fm/screens/schedule/schedule_screen.dart';
 import 'package:radio90fm/screens/about/about_screen.dart';
-import 'package:radio90fm/screens/contact/contact_screen.dart';
 
 class RadioApp extends ConsumerStatefulWidget {
   const RadioApp({super.key});
@@ -24,12 +22,6 @@ class _RadioAppState extends ConsumerState<RadioApp> {
     AboutScreen(),
   ];
 
-  void _shareApp() {
-    Share.share(
-      'Click Here to install Radio 90 FM App on your mobile:\n${AppConstants.shareAppUrl}',
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -37,14 +29,6 @@ class _RadioAppState extends ConsumerState<RadioApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.share_rounded, color: Colors.white),
-              onPressed: _shareApp,
-            ),
-          ],
-        ),
         body: IndexedStack(
           index: _currentIndex,
           children: _screens,
