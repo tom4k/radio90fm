@@ -532,8 +532,38 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === "overview" && (
+          {/* DATABASE LOADER & SKELETON WIDGET */}
+          {loading ? (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-12 text-center space-y-6 shadow-2xl animate-in fade-in duration-300">
+              <div className="flex justify-center">
+                <div className="relative flex items-center justify-center">
+                  <div className="h-16 w-16 border-4 border-red-600/20 border-t-red-600 rounded-full animate-spin"></div>
+                  <img
+                    src="/logo.png"
+                    alt="Radio 90 FM"
+                    className="h-8 w-8 object-contain absolute rounded-full border border-neutral-800 bg-neutral-950 p-0.5"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5 max-w-sm mx-auto">
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Fetching Database Schedule...
+                </h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Connecting to Neon PostgreSQL database and retrieving live broadcast schedule & station settings.
+                </p>
+              </div>
+
+              {/* Skeleton Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 max-w-xl mx-auto">
+                <div className="h-24 bg-neutral-950/80 border border-neutral-800/80 rounded-2xl animate-pulse"></div>
+                <div className="h-24 bg-neutral-950/80 border border-neutral-800/80 rounded-2xl animate-pulse"></div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* TAB 1: OVERVIEW */}
+              {activeTab === "overview" && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -1399,6 +1429,8 @@ export default function DashboardPage() {
                 </button>
               </form>
             </div>
+          )}
+            </>
           )}
         </main>
       </div>
