@@ -37,67 +37,6 @@ class _RadioAppState extends ConsumerState<RadioApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: Scaffold(
-        drawer: Drawer(
-          backgroundColor: const Color(0xFF141414),
-          child: Column(
-            children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(color: Color(0xFF0F0F0F)),
-                child: Center(
-                  child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.radio_rounded, color: AppTheme.primaryRed),
-                title: const Text('Listen Live', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() => _currentIndex = 0);
-                },
-              ),
-              const Divider(color: Color(0xFF262626)),
-              ListTile(
-                leading: const Icon(Icons.calendar_month_rounded, color: AppTheme.primaryRed),
-                title: const Text('Weekly Schedule', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() => _currentIndex = 1);
-                },
-              ),
-              const Divider(color: Color(0xFF262626)),
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded, color: AppTheme.primaryRed),
-                title: const Text('About Station', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() => _currentIndex = 2);
-                },
-              ),
-              const Divider(color: Color(0xFF262626)),
-              ListTile(
-                leading: const Icon(Icons.contact_phone_rounded, color: AppTheme.primaryRed),
-                title: const Text('Contact Us', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ContactScreen()),
-                  );
-                },
-              ),
-              const Spacer(),
-              ListTile(
-                leading: const Icon(Icons.share_rounded, color: Colors.white),
-                title: const Text('Share App', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _shareApp();
-                },
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
         appBar: AppBar(
           actions: [
             IconButton(
