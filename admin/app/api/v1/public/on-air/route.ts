@@ -57,6 +57,15 @@ export async function GET() {
 
     const { dayOfWeek, currentMinutes, now } = getKolkataTime();
 
+    const serverTimeStr = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }).format(now) + " IST";
+
     // 1. Check for Active Live Override
     const activeOverrides = await db
       .select()
@@ -135,6 +144,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: {
+        serverTime: serverTimeStr,
         isLiveOverride: false,
         currentProgram: current
           ? {

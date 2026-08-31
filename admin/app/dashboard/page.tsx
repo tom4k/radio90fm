@@ -69,6 +69,27 @@ export default function DashboardPage() {
     "Sunday",
   ];
 
+  const [liveServerTime, setLiveServerTime] = useState<string>("");
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const timeStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Kolkata",
+        weekday: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }).format(now);
+      setLiveServerTime(timeStr + " IST");
+    };
+
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -676,37 +697,48 @@ export default function DashboardPage() {
 
               {/* Status & Current Program Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* NOW ON AIR CARD WITH DIRECT EDIT BUTTON */}
+                {/* NOW ON AIR CARD WITH LIVE SERVER TIME & EDIT BUTTON */}
                 <div className="bg-neutral-900 border border-neutral-800/90 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs uppercase font-bold text-red-400 tracking-wider flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
-                        NOW ON AIR
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping"></span>
+                        <span className="text-xs uppercase font-bold text-red-400 tracking-wider">
+                          NOW ON AIR
+                        </span>
+                      </div>
+
+                      {/* LIVE SERVER STATION CLOCK */}
+                      <div className="text-[11px] font-mono text-emerald-400 bg-neutral-950 border border-emerald-900/60 px-2.5 py-1 rounded-lg flex items-center space-x-1.5 shadow-inner">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>{liveServerTime || onAir?.data?.serverTime || "Loading time..."}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 pt-1">
+                      <div>
+                        <div className="text-2xl font-extrabold text-white tracking-tight">
+                          {onAir?.data?.currentProgram?.title || "Radio 90 FM Broadcast"}
+                        </div>
+                        <div className="text-xs text-neutral-300 space-y-1 mt-1">
+                          <div>
+                            Presenter: <span className="font-semibold text-white">{onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}</span>
+                          </div>
+                          {onAir?.data?.currentProgram?.startMinutes !== undefined && (
+                            <div className="text-neutral-400 font-mono">
+                              Schedule Slot: {minutesToFormattedTime(onAir.data.currentProgram.startMinutes)} – {minutesToFormattedTime(onAir.data.currentProgram.endMinutes)}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {currentProgData && (
                         <button
                           onClick={() => openEditModal(currentProgData)}
-                          className="text-xs font-semibold text-neutral-200 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3 py-1.5 rounded-xl transition shadow-md flex items-center gap-1.5"
+                          className="text-xs font-semibold text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3 py-2 rounded-xl transition shadow-md flex items-center gap-1.5 whitespace-nowrap"
                         >
-                          <span>✏️ Edit Current Program</span>
+                          <span>✏️ Edit Program</span>
                         </button>
-                      )}
-                    </div>
-
-                    <div className="text-2xl font-extrabold text-white tracking-tight">
-                      {onAir?.data?.currentProgram?.title || "Radio 90 FM Broadcast"}
-                    </div>
-
-                    <div className="text-xs text-neutral-300 space-y-1">
-                      <div>
-                        Presenter: <span className="font-semibold text-white">{onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}</span>
-                      </div>
-                      {onAir?.data?.currentProgram?.startMinutes !== undefined && (
-                        <div className="text-neutral-400 font-mono">
-                          Schedule: {minutesToFormattedTime(onAir.data.currentProgram.startMinutes)} – {minutesToFormattedTime(onAir.data.currentProgram.endMinutes)}
-                        </div>
                       )}
                     </div>
 
