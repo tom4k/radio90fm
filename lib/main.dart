@@ -6,13 +6,18 @@ import 'package:radio90fm/app/app.dart';
 import 'package:radio90fm/providers/app_providers.dart';
 import 'package:radio90fm/services/radio_audio_service.dart';
 
+import 'package:radio90fm/services/notification_service.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
 
-  // 2. Initialize AudioService
+  // 2. Initialize Local Notification Service
+  await NotificationService().init(prefs);
+
+  // 3. Initialize AudioService
   final audioHandler = await AudioService.init(
     builder: () => RadioAudioHandler(),
     config: const AudioServiceConfig(

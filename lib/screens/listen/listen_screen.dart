@@ -6,6 +6,8 @@ import 'package:radio90fm/providers/app_providers.dart';
 import 'package:radio90fm/services/radio_audio_service.dart';
 import 'package:radio90fm/widgets/live_contact_actions.dart';
 
+import 'package:radio90fm/screens/settings/notification_settings_screen.dart';
+
 class ListenScreen extends ConsumerWidget {
   const ListenScreen({super.key});
 
@@ -23,13 +25,27 @@ class ListenScreen extends ConsumerWidget {
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Station Logo Banner
-          Center(
-            child: Image.asset(
-              'assets/images/icon.png',
-              width: 260,
-              fit: BoxFit.contain,
-            ),
+          // Station Logo Banner & Settings Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SizedBox(width: 40),
+              Image.asset(
+                'assets/images/icon.png',
+                height: 52,
+                fit: BoxFit.contain,
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_rounded, color: Colors.white70, size: 26),
+                tooltip: 'Notification Settings',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+                  );
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 12),
 
