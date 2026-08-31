@@ -5,7 +5,7 @@ class AppConstants {
   // Default API Base URL (Configurable via --dart-define=API_BASE_URL=...)
   static const String defaultApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3000/api/v1',
+    defaultValue: 'https://radio90fm.vercel.app/api/v1',
   );
 
   // Emergency fallback stream URL
