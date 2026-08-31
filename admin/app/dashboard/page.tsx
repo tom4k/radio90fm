@@ -70,12 +70,17 @@ export default function DashboardPage() {
       const scheduleData = await scheduleRes.json();
       const onAirData = await onAirRes.json();
 
-      if (stationData.success) {
+      if (stationData.success && stationData.data) {
         setStation(stationData.data);
-        setStreamUrl(stationData.data.stream.url || "");
-        setFallbackUrl(stationData.data.stream.fallbackUrl || "");
-        setPhone(stationData.data.contacts.phone || "");
-        setWhatsapp(stationData.data.contacts.whatsapp || "");
+        const sUrl = stationData.data.streamUrl || stationData.data.stream?.url || "https://icecast.octosignals.com/radio90_final";
+        const fUrl = stationData.data.fallbackStreamUrl || stationData.data.stream?.fallbackUrl || "";
+        const pNum = stationData.data.defaultPhone || stationData.data.contacts?.phone || "9496345029";
+        const wNum = stationData.data.defaultWhatsapp || stationData.data.contacts?.whatsapp || "9048389090";
+
+        setStreamUrl(sUrl);
+        setFallbackUrl(fUrl);
+        setPhone(pNum);
+        setWhatsapp(wNum);
       }
 
       if (scheduleData.success && Array.isArray(scheduleData.data) && scheduleData.data.length > 0) {
@@ -414,7 +419,7 @@ export default function DashboardPage() {
                     <span className="text-xl font-bold text-white">Configured & Live</span>
                   </div>
                   <p className="text-xs text-neutral-400 truncate font-mono">
-                    {station?.stream?.url || "https://icecast.octosignals.com/radio90_final"}
+                    {station?.streamUrl || station?.stream?.url || "https://icecast.octosignals.com/radio90_final"}
                   </p>
                 </div>
 
