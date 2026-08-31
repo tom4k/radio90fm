@@ -94,8 +94,10 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  async function fetchData() {
-    setLoading(true);
+  async function fetchData(showFullLoader = true) {
+    if (showFullLoader) {
+      setLoading(true);
+    }
     try {
       // 1. Station Config
       try {
@@ -158,7 +160,9 @@ export default function DashboardPage() {
         console.error("Error loading on-air status", err);
       }
     } finally {
-      setLoading(false);
+      if (showFullLoader) {
+        setLoading(false);
+      }
     }
   }
 
@@ -229,7 +233,7 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.success) {
         setMsg("Station configuration saved successfully!");
-        fetchData();
+        fetchData(false);
       } else {
         setMsg(data.error?.message || "Failed to save configuration");
       }
@@ -309,7 +313,7 @@ export default function DashboardPage() {
       if (data.success) {
         setMsg("Program updated successfully!");
         setEditingProgramId(null);
-        fetchData();
+        fetchData(false);
       } else {
         setMsg(data.error?.message || "Failed to update program");
       }
@@ -346,7 +350,7 @@ export default function DashboardPage() {
         setNewProgTitle("");
         setNewProgPresenter("");
         setShowAddForm(false);
-        fetchData();
+        fetchData(false);
       } else {
         setMsg(data.error?.message || "Failed to create program");
       }
@@ -363,7 +367,7 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
-        fetchData();
+        fetchData(false);
       }
     } catch (err) {
       console.error(err);
@@ -394,7 +398,7 @@ export default function DashboardPage() {
         setMsg("Live Override started!");
         setOverrideTitle("");
         setOverridePresenter("");
-        fetchData();
+        fetchData(false);
       }
     } catch (err) {
       setMsg("Failed to start Live Override");
