@@ -38,6 +38,16 @@ export default function DashboardPage() {
   const [newProgEnableCall, setNewProgEnableCall] = useState(true);
   const [newProgEnableWhatsapp, setNewProgEnableWhatsapp] = useState(true);
 
+  // Edit program modal state
+  const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
+  const [editProgTitle, setEditProgTitle] = useState("");
+  const [editProgPresenter, setEditProgPresenter] = useState("");
+  const [editProgDay, setEditProgDay] = useState(0);
+  const [editProgStartTime, setEditProgStartTime] = useState("08:00");
+  const [editProgEndTime, setEditProgEndTime] = useState("09:00");
+  const [editProgEnableCall, setEditProgEnableCall] = useState(true);
+  const [editProgEnableWhatsapp, setEditProgEnableWhatsapp] = useState(true);
+
   // Override state
   const [overrideTitle, setOverrideTitle] = useState("");
   const [overridePresenter, setOverridePresenter] = useState("");
@@ -174,6 +184,14 @@ export default function DashboardPage() {
     return (h || 0) * 60 + (m || 0);
   }
 
+  function minutesToHHMM(mins: number): string {
+    const h = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+    const hStr = h < 10 ? `0${h}` : `${h}`;
+    const mStr = m < 10 ? `0${m}` : `${m}`;
+    return `${hStr}:${mStr}`;
+  }
+
   function minutesToFormattedTime(mins: number): string {
     const hours = Math.floor(mins / 60) % 24;
     const minutes = mins % 60;
@@ -191,6 +209,53 @@ export default function DashboardPage() {
     if (hrs === 0) return `${mins}m`;
     if (mins === 0) return `${hrs}h`;
     return `${hrs}h ${mins}m`;
+  }
+
+  function openEditModal(program: any) {
+    setEditingProgramId(program.id);
+    setEditProgTitle(program.title || "");
+    setEditProgPresenter(program.presenter || "");
+    setEditProgDay(program.dayOfWeek ?? 0);
+    setEditProgStartTime(minutesToHHMM(program.startMinutes ?? 480));
+    setEditProgEndTime(minutesToHHMM(program.endMinutes ?? 540));
+    setEditProgEnableCall(program.enableCall ?? true);
+    setEditProgEnableWhatsapp(program.enableWhatsapp ?? true);
+  }
+
+  async function handleSaveProgramEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingProgramId) return;
+    setMsg("");
+
+    try {
+      const startMins = timeStringToMinutes(editProgStartTime);
+      const endMins = timeStringToMinutes(editProgEndTime);
+
+      const res = await fetch(`/api/v1/admin/programs/${editingProgramId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editProgTitle,
+          presenter: editProgPresenter,
+          dayOfWeek: Number(editProgDay),
+          startMinutes: startMins,
+          endMinutes: endMins,
+          enableCall: editProgEnableCall,
+          enableWhatsapp: editProgEnableWhatsapp,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setMsg("Program updated successfully!");
+        setEditingProgramId(null);
+        fetchData();
+      } else {
+        setMsg(data.error?.message || "Failed to update program");
+      }
+    } catch (err) {
+      setMsg("Error updating program");
+    }
   }
 
   async function handleCreateProgram(e: React.FormEvent) {
@@ -472,7 +537,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 2: SCHEDULE MANAGER (PREMIUM REDESIGN) */}
+          {/* TAB 2: SCHEDULE MANAGER */}
           {activeTab === "schedule" && (
             <div className="space-y-6">
               {/* Header & KPI Summary Banner */}
@@ -777,8 +842,8 @@ export default function DashboardPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-4 self-end sm:self-center">
-                          <div className="flex items-center space-x-2 text-xs font-medium">
+                        <div className="flex items-center space-x-3 self-end sm:self-center">
+                          <div className="flex items-center space-x-2 text-xs font-medium mr-2">
                             {p.enableCall && (
                               <span className="bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 px-2.5 py-1 rounded-lg">
                                 📞 Calls
@@ -790,6 +855,13 @@ export default function DashboardPage() {
                               </span>
                             )}
                           </div>
+
+                          <button
+                            onClick={() => openEditModal(p)}
+                            className="text-xs text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3.5 py-2 rounded-xl transition"
+                          >
+                            Edit
+                          </button>
 
                           <button
                             onClick={() => handleDeleteProgram(p.id)}
@@ -833,7 +905,13 @@ export default function DashboardPage() {
                                 .filter(Boolean)
                                 .join(", ") || "None"}
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-3 text-right space-x-2">
+                              <button
+                                onClick={() => openEditModal(p)}
+                                className="text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1 rounded-md"
+                              >
+                                Edit
+                              </button>
                               <button
                                 onClick={() => handleDeleteProgram(p.id)}
                                 className="text-red-400 hover:text-red-200 bg-red-950/40 border border-red-900/60 px-2.5 py-1 rounded-md"
@@ -848,6 +926,118 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* EDIT PROGRAM MODAL */}
+          {editingProgramId && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl animate-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span> Edit Broadcast Program
+                  </h3>
+                  <button onClick={() => setEditingProgramId(null)} className="text-neutral-400 hover:text-white">✕</button>
+                </div>
+
+                <form onSubmit={handleSaveProgramEdit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1">Program Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editProgTitle}
+                      onChange={(e) => setEditProgTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1">Presenter Name</label>
+                    <input
+                      type="text"
+                      value={editProgPresenter}
+                      onChange={(e) => setEditProgPresenter(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-400 mb-1">Broadcast Day</label>
+                      <select
+                        value={editProgDay}
+                        onChange={(e) => setEditProgDay(Number(e.target.value))}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                      >
+                        {daysOfWeek.map((day, idx) => (
+                          <option key={idx} value={idx}>{day}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-400 mb-1">Start Time</label>
+                      <input
+                        type="time"
+                        required
+                        value={editProgStartTime}
+                        onChange={(e) => setEditProgStartTime(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1">End Time</label>
+                    <input
+                      type="time"
+                      required
+                      value={editProgEndTime}
+                      onChange={(e) => setEditProgEndTime(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-6 pt-2">
+                    <label className="flex items-center space-x-2 text-xs font-medium text-neutral-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editProgEnableCall}
+                        onChange={(e) => setEditProgEnableCall(e.target.checked)}
+                        className="h-4 w-4 rounded border-neutral-700 text-red-600 focus:ring-red-600 bg-neutral-950"
+                      />
+                      <span>Enable Calls</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 text-xs font-medium text-neutral-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editProgEnableWhatsapp}
+                        onChange={(e) => setEditProgEnableWhatsapp(e.target.checked)}
+                        className="h-4 w-4 rounded border-neutral-700 text-red-600 focus:ring-red-600 bg-neutral-950"
+                      />
+                      <span>Enable WhatsApp</span>
+                    </label>
+                  </div>
+
+                  <div className="pt-3 flex justify-end space-x-3 border-t border-neutral-800">
+                    <button
+                      type="button"
+                      onClick={() => setEditingProgramId(null)}
+                      className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold px-4 py-2.5 rounded-xl transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
 
