@@ -1,4 +1,4 @@
-package com.example.radio90fm
+package com.radio90fm
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

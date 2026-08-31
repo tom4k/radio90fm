@@ -15,11 +15,11 @@ Future<void> main() async {
   // 2. Initialize AudioService
   final audioHandler = await AudioService.init(
     builder: () => RadioAudioHandler(),
-    config: AudioServiceConfig(
+    config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.radio90fm.audio',
       androidNotificationChannelName: 'Radio 90 FM Live',
       androidNotificationOngoing: true,
-      androidStopForegroundOnPause: false,
+      androidStopForegroundOnPause: true,
     ),
   );
 
