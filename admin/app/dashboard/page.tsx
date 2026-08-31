@@ -600,11 +600,11 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between border-b border-neutral-800/80 pb-4">
                   <div className="flex items-center space-x-3">
                     <span className="relative flex h-3 w-3">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isStreamBuffering ? "bg-amber-400" : isPlaying ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
-                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isStreamBuffering ? "bg-amber-500" : isPlaying ? "bg-red-500" : "bg-emerald-500"}`}></span>
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying && isStreamBuffering ? "bg-amber-400" : isPlaying ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isPlaying && isStreamBuffering ? "bg-amber-500" : isPlaying ? "bg-red-500" : "bg-emerald-500"}`}></span>
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      {isStreamBuffering
+                      {isPlaying && isStreamBuffering
                         ? "CONNECTING & BUFFERING STREAM..."
                         : isPlaying
                         ? "NOW BROADCASTING LIVE"
@@ -622,8 +622,9 @@ export default function DashboardPage() {
                   ref={audioRef}
                   src={streamUrl || "https://icecast.octosignals.com/radio90_final"}
                   preload="none"
-                  onLoadStart={() => setIsStreamBuffering(true)}
-                  onWaiting={() => setIsStreamBuffering(true)}
+                  onWaiting={() => {
+                    if (isPlaying) setIsStreamBuffering(true);
+                  }}
                   onCanPlay={() => setIsStreamBuffering(false)}
                   onPlaying={() => {
                     setIsStreamBuffering(false);
@@ -645,7 +646,7 @@ export default function DashboardPage() {
                       onClick={togglePlayPause}
                       className="h-16 w-16 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-xl shadow-red-950/80 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-90"
                     >
-                      {isStreamBuffering ? (
+                      {isPlaying && isStreamBuffering ? (
                         <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : isPlaying ? (
                         <span className="text-2xl font-bold">❚❚</span>
