@@ -429,7 +429,7 @@ export default function DashboardPage() {
     const cur = onAir?.currentProgram || onAir?.data?.currentProgram;
     if (!cur) return null;
     const matched = programs.find(
-      (p) => p.id === cur.id || (p.title || "").toLowerCase() === (cur.title || "").toLowerCase()
+      (p) => p.id === cur.id || (p.dayOfWeek === cur.dayOfWeek && p.startMinutes === cur.startMinutes)
     );
     return matched || cur;
   }, [onAir, programs]);
@@ -438,7 +438,7 @@ export default function DashboardPage() {
     const nextP = onAir?.nextProgram || onAir?.data?.nextProgram;
     if (!nextP) return null;
     const matched = programs.find(
-      (p) => p.id === nextP.id || (p.title || "").toLowerCase() === (nextP.title || "").toLowerCase()
+      (p) => p.id === nextP.id || (p.dayOfWeek === nextP.dayOfWeek && p.startMinutes === nextP.startMinutes)
     );
     return matched || nextP;
   }, [onAir, programs]);

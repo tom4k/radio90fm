@@ -176,10 +176,15 @@ export async function GET() {
           ? {
               id: next.id,
               title: next.title,
+              description: next.description,
               presenter: next.presenter,
               dayOfWeek: next.dayOfWeek,
               startMinutes: next.startMinutes,
               endMinutes: next.endMinutes,
+              enableCall: next.enableCall,
+              enableWhatsapp: next.enableWhatsapp,
+              phoneNumber: next.phoneNumber,
+              whatsappNumber: next.whatsappNumber,
             }
           : null,
         contacts: {
