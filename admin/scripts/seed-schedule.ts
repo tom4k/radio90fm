@@ -125,13 +125,10 @@ export async function seedSchedule(exitOnFinish = false) {
       const endMinutes = k < slots.length - 1 ? slots[k + 1].startMins : 1440;
 
       // Determine presenter and call options for live shows
-      let presenter = "Voice of Amal Jyothi";
-      let enableCall = true;
-      let enableWhatsapp = true;
-
-      if (showTitle.toLowerCase().includes("live")) {
-        presenter = "Live Radio Host";
-      }
+      const isLive = showTitle.toLowerCase().includes("live");
+      let presenter = isLive ? "Live Radio Host" : "Voice of Amal Jyothi";
+      let enableCall = isLive;
+      let enableWhatsapp = isLive;
 
       programInserts.push({
         id: crypto.randomUUID(),
