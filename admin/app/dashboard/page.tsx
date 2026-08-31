@@ -60,47 +60,66 @@ export default function DashboardPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [stationRes, scheduleRes, onAirRes] = await Promise.all([
-        fetch("/api/v1/admin/station"),
-        fetch("/api/v1/admin/programs"),
-        fetch("/api/v1/public/on-air"),
-      ]);
+      // 1. Station Config
+      try {
+        const stationRes = await fetch("/api/v1/admin/station");
+        if (stationRes.ok) {
+          const stationData = await stationRes.json();
+          if (stationData.success && stationData.data) {
+            setStation(stationData.data);
+            const sUrl = stationData.data.streamUrl || stationData.data.stream?.url || "https://icecast.octosignals.com/radio90_final";
+            const fUrl = stationData.data.fallbackStreamUrl || stationData.data.stream?.fallbackUrl || "";
+            const pNum = stationData.data.defaultPhone || stationData.data.contacts?.phone || "9496345029";
+            const wNum = stationData.data.defaultWhatsapp || stationData.data.contacts?.whatsapp || "9048389090";
 
-      const stationData = await stationRes.json();
-      const scheduleData = await scheduleRes.json();
-      const onAirData = await onAirRes.json();
-
-      if (stationData.success && stationData.data) {
-        setStation(stationData.data);
-        const sUrl = stationData.data.streamUrl || stationData.data.stream?.url || "https://icecast.octosignals.com/radio90_final";
-        const fUrl = stationData.data.fallbackStreamUrl || stationData.data.stream?.fallbackUrl || "";
-        const pNum = stationData.data.defaultPhone || stationData.data.contacts?.phone || "9496345029";
-        const wNum = stationData.data.defaultWhatsapp || stationData.data.contacts?.whatsapp || "9048389090";
-
-        setStreamUrl(sUrl);
-        setFallbackUrl(fUrl);
-        setPhone(pNum);
-        setWhatsapp(wNum);
-      }
-
-      if (scheduleData.success && Array.isArray(scheduleData.data) && scheduleData.data.length > 0) {
-        setPrograms(scheduleData.data);
-      } else {
-        // Fallback to public schedule endpoint
-        try {
-          const publicScheduleRes = await fetch("/api/v1/public/schedule");
-          const publicScheduleData = await publicScheduleRes.json();
-          if (publicScheduleData.success && Array.isArray(publicScheduleData.data)) {
-            setPrograms(publicScheduleData.data);
+            setStreamUrl(sUrl);
+            setFallbackUrl(fUrl);
+            setPhone(pNum);
+            setWhatsapp(wNum);
           }
-        } catch (_) {}
+        }
+      } catch (err) {
+        console.error("Error loading station config", err);
       }
 
-      if (onAirData.success) {
-        setOnAir(onAirData.data);
+      // 2. Weekly Programs Schedule
+      try {
+        let loadedPrograms: any[] = [];
+        const scheduleRes = await fetch("/api/v1/admin/programs");
+        if (scheduleRes.ok) {
+          const scheduleData = await scheduleRes.json();
+          if (scheduleData.success && Array.isArray(scheduleData.data) && scheduleData.data.length > 0) {
+            loadedPrograms = scheduleData.data;
+          }
+        }
+
+        if (loadedPrograms.length === 0) {
+          const publicScheduleRes = await fetch("/api/v1/public/schedule");
+          if (publicScheduleRes.ok) {
+            const publicScheduleData = await publicScheduleRes.json();
+            if (publicScheduleData.success && Array.isArray(publicScheduleData.data)) {
+              loadedPrograms = publicScheduleData.data;
+            }
+          }
+        }
+
+        setPrograms(loadedPrograms);
+      } catch (err) {
+        console.error("Error loading programs schedule", err);
       }
-    } catch (err) {
-      console.error("Failed to load dashboard data", err);
+
+      // 3. On-Air Status
+      try {
+        const onAirRes = await fetch("/api/v1/public/on-air");
+        if (onAirRes.ok) {
+          const onAirData = await onAirRes.json();
+          if (onAirData.success) {
+            setOnAir(onAirData.data);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading on-air status", err);
+      }
     } finally {
       setLoading(false);
     }
