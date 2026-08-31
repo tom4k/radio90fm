@@ -417,8 +417,8 @@ export default function DashboardPage() {
   }, [programs]);
 
   const currentProgData = useMemo(() => {
-    if (!onAir?.data?.currentProgram) return null;
-    const cur = onAir.data.currentProgram;
+    const cur = onAir?.currentProgram || onAir?.data?.currentProgram;
+    if (!cur) return null;
     const matched = programs.find(
       (p) => p.id === cur.id || (p.title || "").toLowerCase() === (cur.title || "").toLowerCase()
     );
@@ -699,72 +699,77 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* NOW ON AIR CARD WITH LIVE SERVER TIME & EDIT BUTTON */}
                 <div className="bg-neutral-900 border border-neutral-800/90 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
-                      <div className="flex items-center space-x-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping"></span>
-                        <span className="text-xs uppercase font-bold text-red-400 tracking-wider">
-                          NOW ON AIR
-                        </span>
-                      </div>
-
-                      {/* LIVE SERVER STATION CLOCK */}
-                      <div className="text-[11px] font-mono text-emerald-400 bg-neutral-950 border border-emerald-900/60 px-2.5 py-1 rounded-lg flex items-center space-x-1.5 shadow-inner">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>{liveServerTime || onAir?.data?.serverTime || "Loading time..."}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 pt-1">
-                      <div>
-                        <div className="text-2xl font-extrabold text-white tracking-tight">
-                          {onAir?.data?.currentProgram?.title || "Radio 90 FM Broadcast"}
-                        </div>
-                        <div className="text-xs text-neutral-300 space-y-1 mt-1">
-                          <div>
-                            Presenter: <span className="font-semibold text-white">{onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}</span>
+                  {(() => {
+                    const curProg = onAir?.currentProgram || onAir?.data?.currentProgram;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping"></span>
+                            <span className="text-xs uppercase font-bold text-red-400 tracking-wider">
+                              NOW ON AIR
+                            </span>
                           </div>
-                          {onAir?.data?.currentProgram?.startMinutes !== undefined && (
-                            <div className="text-neutral-400 font-mono">
-                              Schedule Slot: {minutesToFormattedTime(onAir.data.currentProgram.startMinutes)} – {minutesToFormattedTime(onAir.data.currentProgram.endMinutes)}
+
+                          {/* LIVE SERVER STATION CLOCK */}
+                          <div className="text-[11px] font-mono text-emerald-400 bg-neutral-950 border border-emerald-900/60 px-2.5 py-1 rounded-lg flex items-center space-x-1.5 shadow-inner">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>{liveServerTime || onAir?.serverTime || onAir?.data?.serverTime || "Loading time..."}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start justify-between gap-3 pt-1">
+                          <div>
+                            <div className="text-2xl font-extrabold text-white tracking-tight">
+                              {curProg?.title || "Radio 90 FM Broadcast"}
                             </div>
+                            <div className="text-xs text-neutral-300 space-y-1 mt-1">
+                              <div>
+                                Presenter: <span className="font-semibold text-white">{curProg?.presenter || "Voice of Amal Jyothi"}</span>
+                              </div>
+                              {curProg?.startMinutes !== undefined && (
+                                <div className="text-neutral-400 font-mono">
+                                  Schedule Slot: {minutesToFormattedTime(curProg.startMinutes)} – {minutesToFormattedTime(curProg.endMinutes)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {currentProgData && (
+                            <button
+                              onClick={() => openEditModal(currentProgData)}
+                              className="text-xs font-semibold text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3 py-2 rounded-xl transition shadow-md flex items-center gap-1.5 whitespace-nowrap"
+                            >
+                              <span>✏️ Edit Program</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Features enabled */}
+                        <div className="flex items-center space-x-2 pt-2 text-xs">
+                          {curProg?.enableCall ? (
+                            <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg">
+                              📞 Calls Enabled
+                            </span>
+                          ) : (
+                            <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-lg">
+                              📞 Calls Off
+                            </span>
+                          )}
+
+                          {curProg?.enableWhatsapp ? (
+                            <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg">
+                              💬 WhatsApp Enabled
+                            </span>
+                          ) : (
+                            <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-lg">
+                              💬 WhatsApp Off
+                            </span>
                           )}
                         </div>
                       </div>
-
-                      {currentProgData && (
-                        <button
-                          onClick={() => openEditModal(currentProgData)}
-                          className="text-xs font-semibold text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3 py-2 rounded-xl transition shadow-md flex items-center gap-1.5 whitespace-nowrap"
-                        >
-                          <span>✏️ Edit Program</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Features enabled */}
-                    <div className="flex items-center space-x-2 pt-2 text-xs">
-                      {onAir?.data?.currentProgram?.enableCall ? (
-                        <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg">
-                          📞 Calls Enabled
-                        </span>
-                      ) : (
-                        <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-lg">
-                          📞 Calls Off
-                        </span>
-                      )}
-
-                      {onAir?.data?.currentProgram?.enableWhatsapp ? (
-                        <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg">
-                          💬 WhatsApp Enabled
-                        </span>
-                      ) : (
-                        <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-lg">
-                          💬 WhatsApp Off
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
 
                 {/* UP NEXT SHOW CARD */}
@@ -774,27 +779,30 @@ export default function DashboardPage() {
                       UP NEXT IN SCHEDULE
                     </div>
 
-                    {onAir?.data?.nextProgram ? (
-                      <>
-                        <div className="text-xl font-bold text-white tracking-tight">
-                          {onAir.data.nextProgram.title}
-                        </div>
-                        <div className="text-xs text-neutral-300 space-y-1">
-                          <div>
-                            Presenter: <span className="font-semibold text-white">{onAir.data.nextProgram.presenter || "Voice of Amal Jyothi"}</span>
+                    {(() => {
+                      const nextProg = onAir?.nextProgram || onAir?.data?.nextProgram;
+                      return nextProg ? (
+                        <>
+                          <div className="text-xl font-bold text-white tracking-tight">
+                            {nextProg.title}
                           </div>
-                          {onAir.data.nextProgram.startMinutes !== undefined && (
-                            <div className="text-neutral-400 font-mono">
-                              Starts at: {minutesToFormattedTime(onAir.data.nextProgram.startMinutes)}
+                          <div className="text-xs text-neutral-300 space-y-1">
+                            <div>
+                              Presenter: <span className="font-semibold text-white">{nextProg.presenter || "Voice of Amal Jyothi"}</span>
                             </div>
-                          )}
+                            {nextProg.startMinutes !== undefined && (
+                              <div className="text-neutral-400 font-mono">
+                                Starts at: {minutesToFormattedTime(nextProg.startMinutes)}
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-neutral-400 italic">
+                          Continuous broadcast streaming.
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-neutral-400 italic">
-                        Continuous broadcast streaming.
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
