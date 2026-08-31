@@ -357,40 +357,6 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
               ),
             ),
 
-            const SizedBox(height: 28),
-
-            // 6. Send Test Notification Button
-            ElevatedButton.icon(
-              onPressed: () {
-                _notificationService.showNotification(
-                  id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                  title: 'Radio 90 FM Test Alert',
-                  body: 'Notification system is active and working properly!',
-                );
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Test notification sent! Check your status bar.'),
-                    backgroundColor: AppTheme.primaryRed,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.notifications_active_rounded, color: Colors.white),
-              label: const Text(
-                'Send Test Notification',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryRed,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 4,
-              ),
-            ),
-
             const SizedBox(height: 24),
           ],
         ),
