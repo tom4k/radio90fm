@@ -6,8 +6,6 @@ import 'package:radio90fm/providers/app_providers.dart';
 import 'package:radio90fm/services/radio_audio_service.dart';
 import 'package:radio90fm/widgets/live_contact_actions.dart';
 
-import 'package:radio90fm/screens/settings/notification_settings_screen.dart';
-
 class ListenScreen extends ConsumerWidget {
   const ListenScreen({super.key});
 
@@ -25,41 +23,15 @@ class ListenScreen extends ConsumerWidget {
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Station Logo Banner & Settings Button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(width: 40),
-              Image.asset(
-                'assets/images/icon.png',
-                height: 52,
-                fit: BoxFit.contain,
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings_rounded, color: Colors.white70, size: 26),
-                tooltip: 'Notification Settings',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Station Tagline
-          const Text(
-            'Voice of Amal Jyothi',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
+          // Large Prominent Radio 90 FM Logo
+          Center(
+            child: Image.asset(
+              'assets/images/icon.png',
+              width: 320,
+              fit: BoxFit.contain,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // NOW ON AIR CARD
           onAirAsync.when(

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:radio90fm/app/theme.dart';
 
-import 'package:radio90fm/screens/settings/notification_settings_screen.dart';
-
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -21,18 +19,6 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('About Radio 90 FM'),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded, color: Colors.white70),
-            tooltip: 'Notification Settings',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
-              );
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
