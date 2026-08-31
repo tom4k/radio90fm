@@ -312,8 +312,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.success) {
         setMsg("Program updated successfully!");
+        await fetchData(false);
         setEditingProgramId(null);
-        fetchData(false);
       } else {
         setMsg(data.error?.message || "Failed to update program");
       }
@@ -1211,8 +1211,8 @@ export default function DashboardPage() {
                       <span className="text-xl absolute">✏️</span>
                     </div>
                     <div className="text-center space-y-1">
-                      <h4 className="text-sm font-bold text-white tracking-tight">Saving Changes...</h4>
-                      <p className="text-xs text-neutral-400">Updating program schedule in Neon Postgres database.</p>
+                      <h4 className="text-sm font-bold text-white tracking-tight">Saving Changes & Syncing Data...</h4>
+                      <p className="text-xs text-neutral-400">Updating database and fetching fresh broadcast schedule.</p>
                     </div>
                   </div>
                 )}
