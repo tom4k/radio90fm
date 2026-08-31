@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
@@ -15,6 +15,11 @@ export default function DashboardPage() {
   const [onAir, setOnAir] = useState<any>(null);
   const [streamTestResult, setStreamTestResult] = useState<any>(null);
   const [testingStream, setTestingStream] = useState(false);
+
+  // Audio player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0.8);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Schedule filtering & view state
   const [scheduleDayFilter, setScheduleDayFilter] = useState<number | "ALL">("ALL");
@@ -134,6 +139,27 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }
+
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.error("Audio playback error:", err));
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setAudioVolume(val);
+    if (audioRef.current) {
+      audioRef.current.volume = val;
+    }
+  };
 
   async function handleTestStream() {
     setTestingStream(true);
@@ -359,6 +385,15 @@ export default function DashboardPage() {
     return programs.filter((p) => (p.title || "").toLowerCase().includes("live")).length;
   }, [programs]);
 
+  const currentProgData = useMemo(() => {
+    if (!onAir?.data?.currentProgram) return null;
+    const cur = onAir.data.currentProgram;
+    const matched = programs.find(
+      (p) => p.id === cur.id || (p.title || "").toLowerCase() === (cur.title || "").toLowerCase()
+    );
+    return matched || cur;
+  }, [onAir, programs]);
+
   const filteredPrograms = useMemo(() => {
     return programs
       .filter((p) => {
@@ -490,50 +525,186 @@ export default function DashboardPage() {
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-white tracking-tight">Dashboard Overview</h2>
-
-              {/* Status Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-3">
-                  <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider">
-                    STREAM STATUS
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="h-3.5 w-3.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-950"></span>
-                    <span className="text-xl font-bold text-white">Configured & Live</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 truncate font-mono">
-                    {station?.streamUrl || station?.stream?.url || "https://icecast.octosignals.com/radio90_final"}
-                  </p>
-                </div>
-
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-3">
-                  <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider">
-                    NOW ON AIR
-                  </div>
-                  <div className="text-xl font-bold text-red-400">
-                    {onAir?.data?.currentProgram?.title || "Radio 90 FM Live"}
-                  </div>
-                  <p className="text-xs text-neutral-300">
-                    Presenter: <span className="font-semibold">{onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">Dashboard Overview</h2>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Live stream monitor, real-time audio playback, and active broadcast controls.
                   </p>
                 </div>
               </div>
 
-              {/* Up Next */}
-              {onAir?.data?.nextProgram && (
-                <div className="bg-neutral-900/70 border border-neutral-800/80 rounded-2xl p-6">
-                  <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider mb-2">
-                    UP NEXT
+              {/* LIVE STREAMING PLAYER WIDGET */}
+              <div className="bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 rounded-2xl p-6 shadow-2xl space-y-5 relative overflow-hidden">
+                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-4">
+                  <div className="flex items-center space-x-3">
+                    <span className="relative flex h-3 w-3">
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? "bg-red-400" : "bg-emerald-400"} opacity-75`}></span>
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isPlaying ? "bg-red-500" : "bg-emerald-500"}`}></span>
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                      {isPlaying ? "NOW BROADCASTING LIVE" : "LIVE ICECAST AUDIO STREAM"}
+                    </span>
                   </div>
-                  <div className="font-bold text-white text-lg">
-                    {onAir.data.nextProgram.title}
+
+                  <span className="text-[11px] font-mono text-neutral-400 bg-neutral-950 px-2.5 py-1 rounded-lg border border-neutral-800">
+                    90.0 MHz • Icecast Stream
+                  </span>
+                </div>
+
+                {/* Audio Element */}
+                <audio
+                  ref={audioRef}
+                  src={streamUrl || "https://icecast.octosignals.com/radio90_final"}
+                  preload="none"
+                />
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-1">
+                  <div className="flex items-center space-x-5 w-full sm:w-auto">
+                    <button
+                      onClick={togglePlayPause}
+                      className="h-16 w-16 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white flex items-center justify-center shadow-xl shadow-red-950/80 transition-all transform hover:scale-105 active:scale-95"
+                    >
+                      {isPlaying ? (
+                        <span className="text-2xl font-bold">❚❚</span>
+                      ) : (
+                        <span className="text-2xl font-bold ml-1">▶</span>
+                      )}
+                    </button>
+
+                    <div>
+                      <div className="font-extrabold text-white text-lg tracking-tight">
+                        Radio 90 FM Live Stream
+                      </div>
+                      <div className="text-xs text-neutral-400 truncate max-w-xs font-mono mt-0.5">
+                        {streamUrl || "https://icecast.octosignals.com/radio90_final"}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-neutral-400 mt-1">
-                    Presenter: {onAir.data.nextProgram.presenter || "N/A"}
+
+                  {/* Equalizer Visualizer Bars & Volume Control */}
+                  <div className="flex items-center space-x-6 w-full sm:w-auto justify-between sm:justify-end">
+                    {/* Equalizer Bars Animation */}
+                    <div className="flex items-end space-x-1 h-8 px-3 py-1 bg-neutral-950 border border-neutral-800 rounded-xl">
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-6 animate-pulse" : "h-2"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-8 animate-bounce" : "h-3"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-4 animate-pulse" : "h-2"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-7 animate-bounce" : "h-4"}`}></span>
+                      <span className={`w-1 bg-red-500 rounded-full transition-all duration-300 ${isPlaying ? "h-5 animate-pulse" : "h-2"}`}></span>
+                    </div>
+
+                    {/* Volume Slider */}
+                    <div className="flex items-center space-x-2 bg-neutral-950 border border-neutral-800 px-3 py-2 rounded-xl">
+                      <span className="text-xs text-neutral-400">🔊</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={audioVolume}
+                        onChange={handleVolumeChange}
+                        className="w-20 accent-red-600 h-1.5 bg-neutral-800 rounded-lg cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-neutral-400 w-8 text-right">
+                        {Math.round(audioVolume * 100)}%
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Status & Current Program Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* NOW ON AIR CARD WITH DIRECT EDIT BUTTON */}
+                <div className="bg-neutral-900 border border-neutral-800/90 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs uppercase font-bold text-red-400 tracking-wider flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+                        NOW ON AIR
+                      </div>
+
+                      {currentProgData && (
+                        <button
+                          onClick={() => openEditModal(currentProgData)}
+                          className="text-xs font-semibold text-neutral-200 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3 py-1.5 rounded-xl transition shadow-md flex items-center gap-1.5"
+                        >
+                          <span>✏️ Edit Current Program</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="text-2xl font-extrabold text-white tracking-tight">
+                      {onAir?.data?.currentProgram?.title || "Radio 90 FM Broadcast"}
+                    </div>
+
+                    <div className="text-xs text-neutral-300 space-y-1">
+                      <div>
+                        Presenter: <span className="font-semibold text-white">{onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}</span>
+                      </div>
+                      {onAir?.data?.currentProgram?.startMinutes !== undefined && (
+                        <div className="text-neutral-400 font-mono">
+                          Schedule: {minutesToFormattedTime(onAir.data.currentProgram.startMinutes)} – {minutesToFormattedTime(onAir.data.currentProgram.endMinutes)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Features enabled */}
+                    <div className="flex items-center space-x-2 pt-2 text-xs">
+                      {onAir?.data?.currentProgram?.enableCall ? (
+                        <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg">
+                          📞 Calls Enabled
+                        </span>
+                      ) : (
+                        <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-lg">
+                          📞 Calls Off
+                        </span>
+                      )}
+
+                      {onAir?.data?.currentProgram?.enableWhatsapp ? (
+                        <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg">
+                          💬 WhatsApp Enabled
+                        </span>
+                      ) : (
+                        <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-lg">
+                          💬 WhatsApp Off
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* UP NEXT SHOW CARD */}
+                <div className="bg-neutral-900 border border-neutral-800/90 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider">
+                      UP NEXT IN SCHEDULE
+                    </div>
+
+                    {onAir?.data?.nextProgram ? (
+                      <>
+                        <div className="text-xl font-bold text-white tracking-tight">
+                          {onAir.data.nextProgram.title}
+                        </div>
+                        <div className="text-xs text-neutral-300 space-y-1">
+                          <div>
+                            Presenter: <span className="font-semibold text-white">{onAir.data.nextProgram.presenter || "Voice of Amal Jyothi"}</span>
+                          </div>
+                          {onAir.data.nextProgram.startMinutes !== undefined && (
+                            <div className="text-neutral-400 font-mono">
+                              Starts at: {minutesToFormattedTime(onAir.data.nextProgram.startMinutes)}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-neutral-400 italic">
+                        Continuous broadcast streaming.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
