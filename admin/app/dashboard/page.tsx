@@ -78,8 +78,17 @@ export default function DashboardPage() {
         setWhatsapp(stationData.data.contacts.whatsapp || "");
       }
 
-      if (scheduleData.success) {
-        setPrograms(scheduleData.data || []);
+      if (scheduleData.success && Array.isArray(scheduleData.data) && scheduleData.data.length > 0) {
+        setPrograms(scheduleData.data);
+      } else {
+        // Fallback to public schedule endpoint
+        try {
+          const publicScheduleRes = await fetch("/api/v1/public/schedule");
+          const publicScheduleData = await publicScheduleRes.json();
+          if (publicScheduleData.success && Array.isArray(publicScheduleData.data)) {
+            setPrograms(publicScheduleData.data);
+          }
+        } catch (_) {}
       }
 
       if (onAirData.success) {
