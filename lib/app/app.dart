@@ -5,6 +5,7 @@ import 'package:radio90fm/core/constants/app_constants.dart';
 import 'package:radio90fm/screens/listen/listen_screen.dart';
 import 'package:radio90fm/screens/schedule/schedule_screen.dart';
 import 'package:radio90fm/screens/about/about_screen.dart';
+import 'package:radio90fm/screens/settings/notification_settings_screen.dart';
 
 class RadioApp extends ConsumerStatefulWidget {
   const RadioApp({super.key});
@@ -20,6 +21,7 @@ class _RadioAppState extends ConsumerState<RadioApp> {
     ListenScreen(),
     ScheduleScreen(),
     AboutScreen(),
+    NotificationSettingsScreen(),
   ];
 
   @override
@@ -35,6 +37,7 @@ class _RadioAppState extends ConsumerState<RadioApp> {
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
           onTap: (index) {
             setState(() {
               _currentIndex = index;
@@ -52,6 +55,10 @@ class _RadioAppState extends ConsumerState<RadioApp> {
             BottomNavigationBarItem(
               icon: Icon(Icons.info_outline_rounded),
               label: 'About',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_rounded),
+              label: 'Settings',
             ),
           ],
         ),
