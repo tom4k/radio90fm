@@ -124,3 +124,15 @@ export const auditLogs = pgTable(
   },
   (table) => [index("audit_logs_created_idx").on(table.createdAt)]
 );
+
+export const broadcastNotifications = pgTable(
+  "broadcast_notifications",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    sentBy: text("sent_by").notNull().default("Station Admin"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("broadcast_notif_created_idx").on(table.createdAt)]
+);

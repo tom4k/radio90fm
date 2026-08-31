@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:radio90fm/core/constants/app_constants.dart';
 import 'package:radio90fm/models/station_config.dart';
 import 'package:radio90fm/models/program.dart';
 import 'package:radio90fm/models/on_air_data.dart';
 import 'package:radio90fm/repositories/radio_config_repository.dart';
 import 'package:radio90fm/repositories/schedule_repository.dart';
 import 'package:radio90fm/services/radio_audio_service.dart';
+import 'package:radio90fm/services/notification_service.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('Initialize sharedPreferencesProvider in main()');
@@ -95,4 +99,46 @@ final onAirProvider = StreamProvider<OnAirData>((ref) async* {
 final audioStateProvider = StreamProvider<CustomAudioState>((ref) {
   final audioHandler = ref.watch(audioHandlerProvider);
   return audioHandler.customStateStream;
+});
+
+// Auto-polling for Admin Broadcast Notifications
+final broadcastNotificationPollerProvider = StreamProvider<void>((ref) async* {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  String lastSeenId = prefs.getString('last_broadcast_notif_id') ?? '';
+
+  Future<void> checkNotifications() async {
+    try {
+      final url = Uri.parse('${AppConstants.defaultApiBaseUrl}/public/notifications');
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List && (body['data'] as List).isNotEmpty) {
+          final latest = (body['data'] as List).first;
+          final String notifId = latest['id'] ?? '';
+          final String title = latest['title'] ?? 'Radio 90 FM Alert';
+          final String message = latest['message'] ?? '';
+
+          if (notifId.isNotEmpty && notifId != lastSeenId) {
+            lastSeenId = notifId;
+            await prefs.setString('last_broadcast_notif_id', notifId);
+
+            NotificationService().showNotification(
+              id: notifId.hashCode,
+              title: title,
+              body: message,
+            );
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Initial check
+  await checkNotifications();
+
+  // Poll every 10 seconds for new admin broadcasts
+  await for (final _ in Stream.periodic(const Duration(seconds: 10))) {
+    await checkNotifications();
+    yield null;
+  }
 });

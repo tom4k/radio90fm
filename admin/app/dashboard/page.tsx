@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function DashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "schedule" | "override" | "stream" | "contacts" | "audit"
+    "overview" | "schedule" | "override" | "stream" | "contacts" | "audit" | "notifications"
   >("overview");
 
   const [loading, setLoading] = useState(true);
@@ -58,6 +58,56 @@ export default function DashboardPage() {
   const [overrideTitle, setOverrideTitle] = useState("");
   const [overridePresenter, setOverridePresenter] = useState("");
   const [overrideDurationMinutes, setOverrideDurationMinutes] = useState(60);
+
+  // Broadcast notifications state
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
+  const [sendingNotif, setSendingNotif] = useState(false);
+  const [notificationsList, setNotificationsList] = useState<any[]>([]);
+  const [loadingNotifsList, setLoadingNotifsList] = useState(false);
+
+  const fetchNotificationsList = async () => {
+    setLoadingNotifsList(true);
+    try {
+      const res = await fetch("/api/v1/admin/notifications");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setNotificationsList(json.data || []);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading notifications list", err);
+    } finally {
+      setLoadingNotifsList(false);
+    }
+  };
+
+  const handleSendBroadcastNotif = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifTitle.trim() || !notifMessage.trim()) return;
+    setSendingNotif(true);
+    try {
+      const res = await fetch("/api/v1/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: notifTitle, message: notifMessage }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setNotifTitle("");
+        setNotifMessage("");
+        setMsg("🚀 Broadcast push notification sent to all mobile users!");
+        fetchNotificationsList();
+      } else {
+        setMsg(json.error?.message || "Failed to send notification");
+      }
+    } catch (err: any) {
+      setMsg("Error sending notification: " + err.message);
+    } finally {
+      setSendingNotif(false);
+    }
+  };
 
   const daysOfWeek = [
     "Monday",
@@ -159,6 +209,9 @@ export default function DashboardPage() {
       } catch (err) {
         console.error("Error loading on-air status", err);
       }
+
+      // 4. Notifications List
+      fetchNotificationsList();
     } finally {
       if (showFullLoader) {
         setLoading(false);
@@ -607,6 +660,22 @@ export default function DashboardPage() {
             }`}
           >
             <span>Station Contacts</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("notifications");
+              fetchNotificationsList();
+            }}
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${
+              activeTab === "notifications"
+                ? "bg-red-600 text-white font-semibold shadow-lg shadow-red-950"
+                : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
+            }`}
+          >
+            <span>Broadcast Notifications</span>
+            <span className="text-xs bg-neutral-950/60 text-white px-2 py-0.5 rounded-full border border-white/10 font-bold">
+              📢
+            </span>
           </button>
         </aside>
 
@@ -1256,6 +1325,119 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* BROADCAST PUSH NOTIFICATIONS TAB */}
+          {activeTab === "notifications" && (
+            <div className="space-y-6">
+              {/* Header Card */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500 text-xl font-bold">
+                    📢
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white leading-tight">Broadcast Push Notifications</h3>
+                    <p className="text-xs text-neutral-400">
+                      Send real-time alerts and announcements to all mobile app listeners instantly.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSendBroadcastNotif} className="space-y-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
+                      Notification Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Special Live Broadcast Starting Now!"
+                      value={notifTitle}
+                      onChange={(e) => setNotifTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600 placeholder-neutral-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
+                      Message / Announcement *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="e.g. Tune in to Radio 90 FM for live interaction with our special guest!"
+                      value={notifMessage}
+                      onChange={(e) => setNotifMessage(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600 placeholder-neutral-600"
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={sendingNotif}
+                    className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-50 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-red-950/80 transition flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    {sendingNotif ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Sending Broadcast...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🚀 Send Broadcast Notification</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              {/* Sent History Table */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span> Recent Broadcast Notifications
+                  </h4>
+                  <button
+                    onClick={fetchNotificationsList}
+                    className="text-xs text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800 px-3 py-1 rounded-lg transition"
+                  >
+                    {loadingNotifsList ? "Refreshing..." : "🔄 Refresh List"}
+                  </button>
+                </div>
+
+                {notificationsList.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl">
+                    <p className="text-xs text-neutral-500">No broadcast notifications sent yet.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-neutral-300">
+                      <thead className="bg-neutral-950 text-neutral-400 font-semibold border-b border-neutral-800">
+                        <tr>
+                          <th className="px-4 py-3">Title</th>
+                          <th className="px-4 py-3">Message</th>
+                          <th className="px-4 py-3">Sent By</th>
+                          <th className="px-4 py-3">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/60">
+                        {notificationsList.map((notif: any) => (
+                          <tr key={notif.id} className="hover:bg-neutral-850/50 transition">
+                            <td className="px-4 py-3 font-semibold text-white">{notif.title}</td>
+                            <td className="px-4 py-3 text-neutral-300">{notif.message}</td>
+                            <td className="px-4 py-3 text-neutral-400">{notif.sentBy || "Admin"}</td>
+                            <td className="px-4 py-3 text-neutral-500 font-mono">
+                              {new Date(notif.createdAt).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

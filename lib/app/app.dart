@@ -7,6 +7,8 @@ import 'package:radio90fm/screens/schedule/schedule_screen.dart';
 import 'package:radio90fm/screens/about/about_screen.dart';
 import 'package:radio90fm/screens/settings/notification_settings_screen.dart';
 
+import 'package:radio90fm/providers/app_providers.dart';
+
 class RadioApp extends ConsumerStatefulWidget {
   const RadioApp({super.key});
 
@@ -26,6 +28,8 @@ class _RadioAppState extends ConsumerState<RadioApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(broadcastNotificationPollerProvider);
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
