@@ -434,6 +434,15 @@ export default function DashboardPage() {
     return matched || cur;
   }, [onAir, programs]);
 
+  const nextProgData = useMemo(() => {
+    const nextP = onAir?.nextProgram || onAir?.data?.nextProgram;
+    if (!nextP) return null;
+    const matched = programs.find(
+      (p) => p.id === nextP.id || (p.title || "").toLowerCase() === (nextP.title || "").toLowerCase()
+    );
+    return matched || nextP;
+  }, [onAir, programs]);
+
   const filteredPrograms = useMemo(() => {
     return programs
       .filter((p) => {
@@ -770,17 +779,29 @@ export default function DashboardPage() {
                   })()}
                 </div>
 
-                {/* UP NEXT SHOW CARD */}
+                {/* UP NEXT SHOW CARD WITH DIRECT EDIT BUTTON */}
                 <div className="bg-neutral-900 border border-neutral-800/90 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
                   <div className="space-y-3">
-                    <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider">
-                      UP NEXT IN SCHEDULE
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider flex items-center gap-2">
+                        <span>⏭️</span>
+                        <span>UP NEXT IN SCHEDULE</span>
+                      </div>
+
+                      {nextProgData && (
+                        <button
+                          onClick={() => openEditModal(nextProgData)}
+                          className="text-xs font-semibold text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-3 py-1.5 rounded-xl transition shadow-md flex items-center gap-1.5 whitespace-nowrap"
+                        >
+                          <span>✏️ Edit Up Next Program</span>
+                        </button>
+                      )}
                     </div>
 
                     {(() => {
                       const nextProg = onAir?.nextProgram || onAir?.data?.nextProgram;
                       return nextProg ? (
-                        <>
+                        <div className="space-y-2 pt-1">
                           <div className="text-xl font-bold text-white tracking-tight">
                             {nextProg.title}
                           </div>
@@ -790,13 +811,13 @@ export default function DashboardPage() {
                             </div>
                             {nextProg.startMinutes !== undefined && (
                               <div className="text-neutral-400 font-mono">
-                                Starts at: {minutesToFormattedTime(nextProg.startMinutes)}
+                                Scheduled Time: {minutesToFormattedTime(nextProg.startMinutes)} {nextProg.endMinutes !== undefined ? `– ${minutesToFormattedTime(nextProg.endMinutes)}` : ""}
                               </div>
                             )}
                           </div>
-                        </>
+                        </div>
                       ) : (
-                        <div className="text-sm text-neutral-400 italic">
+                        <div className="text-sm text-neutral-400 italic pt-2">
                           Continuous broadcast streaming.
                         </div>
                       );
