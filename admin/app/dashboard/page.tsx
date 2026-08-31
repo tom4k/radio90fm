@@ -45,6 +45,7 @@ export default function DashboardPage() {
 
   // Edit program modal state
   const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
+  const [savingProgramEdit, setSavingProgramEdit] = useState(false);
   const [editProgTitle, setEditProgTitle] = useState("");
   const [editProgPresenter, setEditProgPresenter] = useState("");
   const [editProgDay, setEditProgDay] = useState(0);
@@ -284,6 +285,7 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!editingProgramId) return;
     setMsg("");
+    setSavingProgramEdit(true);
 
     try {
       const startMins = timeStringToMinutes(editProgStartTime);
@@ -313,6 +315,8 @@ export default function DashboardPage() {
       }
     } catch (err) {
       setMsg("Error updating program");
+    } finally {
+      setSavingProgramEdit(false);
     }
   }
 
@@ -1194,12 +1198,26 @@ export default function DashboardPage() {
           {/* EDIT PROGRAM MODAL */}
           {editingProgramId && (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl animate-in zoom-in-95">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl animate-in zoom-in-95 relative overflow-hidden">
+                {/* FOREGROUND LOADING SPINNER OVERLAY */}
+                {savingProgramEdit && (
+                  <div className="absolute inset-0 z-50 bg-neutral-950/85 backdrop-blur-md flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-200">
+                    <div className="relative flex items-center justify-center">
+                      <div className="h-14 w-14 border-4 border-red-600/30 border-t-red-600 rounded-full animate-spin"></div>
+                      <span className="text-xl absolute">✏️</span>
+                    </div>
+                    <div className="text-center space-y-1">
+                      <h4 className="text-sm font-bold text-white tracking-tight">Saving Changes...</h4>
+                      <p className="text-xs text-neutral-400">Updating program schedule in Neon Postgres database.</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span> Edit Broadcast Program
                   </h3>
-                  <button onClick={() => setEditingProgramId(null)} className="text-neutral-400 hover:text-white">✕</button>
+                  <button onClick={() => setEditingProgramId(null)} className="text-neutral-400 hover:text-white" disabled={savingProgramEdit}>✕</button>
                 </div>
 
                 <form onSubmit={handleSaveProgramEdit} className="space-y-4">
@@ -1288,14 +1306,19 @@ export default function DashboardPage() {
                       type="button"
                       onClick={() => setEditingProgramId(null)}
                       className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold px-4 py-2.5 rounded-xl transition"
+                      disabled={savingProgramEdit}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition"
+                      disabled={savingProgramEdit}
+                      className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 disabled:opacity-50"
                     >
-                      Save Changes
+                      {savingProgramEdit && (
+                        <div className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      )}
+                      <span>{savingProgramEdit ? "Saving..." : "Save Changes"}</span>
                     </button>
                   </div>
                 </form>
