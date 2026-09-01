@@ -168,7 +168,8 @@ class ListenScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          ),
+          ],
+        ),
             loading: () => Container(
               height: 140,
               alignment: Alignment.center,
