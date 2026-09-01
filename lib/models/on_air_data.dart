@@ -1,5 +1,6 @@
 class OnAirData {
   final bool isLiveOverride;
+  final bool isNetworkAvailable;
   final String title;
   final String description;
   final String presenter;
@@ -12,6 +13,7 @@ class OnAirData {
 
   OnAirData({
     required this.isLiveOverride,
+    this.isNetworkAvailable = true,
     required this.title,
     required this.description,
     required this.presenter,
@@ -23,9 +25,24 @@ class OnAirData {
     required this.enableWhatsapp,
   });
 
+  factory OnAirData.noNetwork() {
+    return OnAirData(
+      isLiveOverride: false,
+      isNetworkAvailable: false,
+      title: "No Network Connection",
+      description: "Please check your internet connection and try again.",
+      presenter: "Offline Mode",
+      phone: "",
+      whatsapp: "",
+      enableCall: false,
+      enableWhatsapp: false,
+    );
+  }
+
   factory OnAirData.emergency() {
     return OnAirData(
       isLiveOverride: false,
+      isNetworkAvailable: true,
       title: "Radio 90 FM Live",
       description: "Celebration of Knowledge",
       presenter: "Voice of Amal Jyothi",
@@ -43,6 +60,7 @@ class OnAirData {
 
     return OnAirData(
       isLiveOverride: json['isLiveOverride'] ?? false,
+      isNetworkAvailable: true,
       title: cur['title'] ?? "Radio 90 FM Live",
       description: cur['description'] ?? "Celebration of Knowledge",
       presenter: cur['presenter'] ?? "Voice of Amal Jyothi",

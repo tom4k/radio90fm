@@ -35,70 +35,114 @@ class ListenScreen extends ConsumerWidget {
 
           // NOW ON AIR CARD
           onAirAsync.when(
-            data: (onAir) => Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: onAir.isLiveOverride
-                      ? AppTheme.primaryRed
-                      : const Color(0xFF262626),
-                  width: onAir.isLiveOverride ? 1.5 : 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            data: (onAir) => Column(
+              children: [
+                if (!onAir.isNetworkAvailable) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.wifi_off_rounded, color: Colors.amber, size: 22),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'No Network Connection',
+                                style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Please check your internet connection.',
+                                style: TextStyle(color: Colors.white70, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 16),
                 ],
-              ),
-              child: Column(
-                children: [
-                  // Live Badge
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: onAir.isLiveOverride
-                              ? Colors.amber
-                              : AppTheme.primaryRed,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        onAir.isLiveOverride
-                            ? 'SPECIAL LIVE OVERRIDE'
-                            : '● LIVE NOW',
-                        style: TextStyle(
-                          color: onAir.isLiveOverride
-                              ? Colors.amber
-                              : AppTheme.primaryRed,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          letterSpacing: 1.0,
-                        ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: !onAir.isNetworkAvailable
+                          ? Colors.amber.withValues(alpha: 0.5)
+                          : onAir.isLiveOverride
+                              ? AppTheme.primaryRed
+                              : const Color(0xFF262626),
+                      width: onAir.isLiveOverride ? 1.5 : 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  child: Column(
+                    children: [
+                      // Live / Offline Badge
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: !onAir.isNetworkAvailable
+                                  ? Colors.amber
+                                  : onAir.isLiveOverride
+                                      ? Colors.amber
+                                      : AppTheme.primaryRed,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            !onAir.isNetworkAvailable
+                                ? '● OFFLINE'
+                                : onAir.isLiveOverride
+                                    ? 'SPECIAL LIVE OVERRIDE'
+                                    : '● LIVE NOW',
+                            style: TextStyle(
+                              color: !onAir.isNetworkAvailable
+                                  ? Colors.amber
+                                  : onAir.isLiveOverride
+                                      ? Colors.amber
+                                      : AppTheme.primaryRed,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
 
-                  // Program Title
-                  Text(
-                    onAir.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                      // Program Title
+                      Text(
+                        onAir.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
 
                   if (onAir.presenter.isNotEmpty) ...[
                     const SizedBox(height: 4),
@@ -124,6 +168,7 @@ class ListenScreen extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
             loading: () => Container(
               height: 140,
               alignment: Alignment.center,

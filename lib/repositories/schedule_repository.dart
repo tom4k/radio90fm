@@ -60,8 +60,9 @@ class ScheduleRepository {
       }
     } catch (e) {
       debugPrint('fetchOnAir error: $e');
+      return OnAirData.noNetwork();
     }
 
-    return OnAirData.emergency();
+    return OnAirData.noNetwork();
   }
 }
