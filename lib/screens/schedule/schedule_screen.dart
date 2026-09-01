@@ -17,6 +17,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ScrollController _dayScrollController = ScrollController();
+  final Map<int, GlobalKey> _itemKeys = {};
   bool _hasAutoScrolled = false;
 
   final List<Map<String, String>> _days = [
@@ -65,24 +66,37 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   }
 
   void _scrollToOnAirProgram(List<Program> dayPrograms) {
-    if (_hasAutoScrolled) return;
-    final liveIndex = dayPrograms.indexWhere((p) => _isCurrentlyOnAir(p));
-    if (liveIndex != -1) {
-      _hasAutoScrolled = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          final targetOffset = (liveIndex * 135.0).clamp(
-            0.0,
-            _scrollController.position.maxScrollExtent,
-          );
-          _scrollController.animateTo(
-            targetOffset,
+    if (_hasAutoScrolled || dayPrograms.isEmpty) return;
+
+    final now = DateTime.now();
+    final currentMins = now.hour * 60 + now.minute;
+
+    // 1. Try exact currently on-air program
+    int targetIndex = dayPrograms.indexWhere((p) => _isCurrentlyOnAir(p));
+
+    // 2. Fallback to next upcoming program for today
+    if (targetIndex == -1) {
+      targetIndex = dayPrograms.indexWhere((p) => p.startMinutes >= currentMins);
+    }
+
+    // 3. Fallback to first program if all completed
+    if (targetIndex == -1) targetIndex = 0;
+
+    _hasAutoScrolled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        final key = _itemKeys[targetIndex];
+        if (key?.currentContext != null) {
+          Scrollable.ensureVisible(
+            key!.currentContext!,
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
+            alignment: 0.05,
           );
         }
       });
-    }
+    });
   }
 
   @override
@@ -101,6 +115,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Schedule',
             onPressed: () {
+              _itemKeys.clear();
               _hasAutoScrolled = false;
               ref.invalidate(weeklyScheduleProvider);
             },
@@ -117,6 +132,8 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               onChanged: (val) {
                 setState(() {
                   _searchQuery = val.trim().toLowerCase();
+                  _itemKeys.clear();
+                  _hasAutoScrolled = false;
                 });
               },
               style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -131,6 +148,8 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                           _searchController.clear();
                           setState(() {
                             _searchQuery = '';
+                            _itemKeys.clear();
+                            _hasAutoScrolled = false;
                           });
                         },
                       )
@@ -208,6 +227,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         if (selected) {
                           setState(() {
                             _selectedDay = index;
+                            _itemKeys.clear();
                             _hasAutoScrolled = false;
                           });
                         }
@@ -270,6 +290,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                   color: AppTheme.primaryRed,
                   backgroundColor: AppTheme.cardBackground,
                   onRefresh: () async {
+                    _itemKeys.clear();
                     _hasAutoScrolled = false;
                     ref.invalidate(weeklyScheduleProvider);
                   },
@@ -280,7 +301,11 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     itemBuilder: (context, index) {
                       final program = dayPrograms[index];
                       final isOnAir = _isCurrentlyOnAir(program);
-                      return _buildProgramCard(program, isOnAir);
+                      final key = _itemKeys.putIfAbsent(index, () => GlobalKey());
+                      return Container(
+                        key: key,
+                        child: _buildProgramCard(program, isOnAir),
+                      );
                     },
                   ),
                 );
