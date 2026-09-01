@@ -247,17 +247,27 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
-                    const SizedBox(height: 12),
+                    const Icon(Icons.wifi_off_rounded, size: 54, color: Colors.amber),
+                    const SizedBox(height: 14),
                     const Text(
-                      'Unable to load weekly schedule',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                      'No Network Connection',
+                      style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Please check your internet connection and try again.',
+                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryRed,
                         foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () => ref.invalidate(weeklyScheduleProvider),
                       icon: const Icon(Icons.refresh, size: 18),
