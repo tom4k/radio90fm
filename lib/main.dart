@@ -14,25 +14,33 @@ Future<void> main() async {
   // 1. Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
 
-  // 2. Initialize Local Notification Service
-  await NotificationService().init(prefs);
+  // 2. Initialize AudioService safely
+  AudioHandler? audioHandler;
+  try {
+    audioHandler = await AudioService.init(
+      builder: () => RadioAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.radio90fm.audio',
+        androidNotificationChannelName: 'Radio 90 FM Live',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
+    );
+  } catch (e) {
+    debugPrint('AudioService init warning: $e');
+  }
 
-  // 3. Initialize AudioService
-  final audioHandler = await AudioService.init(
-    builder: () => RadioAudioHandler(),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.radio90fm.audio',
-      androidNotificationChannelName: 'Radio 90 FM Live',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
-    ),
-  );
+  // 3. Initialize NotificationService in background without blocking splash screen / UI render
+  NotificationService().init(prefs).catchError((e) {
+    debugPrint('NotificationService init warning: $e');
+  });
 
   runApp(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        audioHandlerProvider.overrideWithValue(audioHandler),
+        if (audioHandler != null)
+          audioHandlerProvider.overrideWithValue(audioHandler as RadioAudioHandler),
       ],
       child: const RadioApp(),
     ),
