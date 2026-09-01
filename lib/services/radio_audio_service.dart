@@ -162,6 +162,7 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   Future<void> _playUrl(String url) async {
     try {
       _setCustomState(CustomAudioState.connecting);
+      await _player.stop();
       await _player.setAudioSource(AudioSource.uri(Uri.parse(url)));
       await _player.play();
     } catch (e) {
