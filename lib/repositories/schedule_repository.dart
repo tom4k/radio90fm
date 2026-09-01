@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:radio90fm/core/constants/app_constants.dart';
@@ -23,7 +24,7 @@ class ScheduleRepository {
     final url = Uri.parse('$apiBase/public/schedule');
 
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 12));
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] != null) {
@@ -36,8 +37,8 @@ class ScheduleRepository {
           return programs;
         }
       }
-    } catch (_) {
-      // Failure isolation
+    } catch (e) {
+      debugPrint('fetchSchedule error: $e');
     }
 
     return getCachedSchedule();
@@ -48,15 +49,17 @@ class ScheduleRepository {
     final url = Uri.parse('$apiBase/public/on-air');
 
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 12));
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] != null) {
           return OnAirData.fromJson(body['data']);
         }
+      } else {
+        debugPrint('fetchOnAir HTTP ${response.statusCode}: ${response.body}');
       }
-    } catch (_) {
-      // Failure isolation
+    } catch (e) {
+      debugPrint('fetchOnAir error: $e');
     }
 
     return OnAirData.emergency();
