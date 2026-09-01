@@ -54,7 +54,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final scheduleAsync = ref.watch(weeklyScheduleProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.darkBackground,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Broadcast Schedule',

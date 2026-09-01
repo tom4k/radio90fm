@@ -15,7 +15,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkBackground,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('About Radio 90 FM'),
         elevation: 0,
