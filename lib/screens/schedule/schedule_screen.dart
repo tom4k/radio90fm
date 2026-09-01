@@ -15,6 +15,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   int _selectedDay = 0;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _dayScrollController = ScrollController();
+  bool _hasAutoScrolled = false;
 
   final List<Map<String, String>> _days = [
     {'short': 'MON', 'full': 'Monday'},
@@ -32,11 +35,23 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     // Default to current day of week (0 = Monday, ..., 6 = Sunday)
     final now = DateTime.now();
     _selectedDay = (now.weekday - 1) % 7;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_dayScrollController.hasClients) {
+        _dayScrollController.animateTo(
+          (_selectedDay * 75.0).clamp(0.0, _dayScrollController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
+    _dayScrollController.dispose();
     super.dispose();
   }
 
@@ -47,6 +62,27 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
     final currentMins = now.hour * 60 + now.minute;
     return currentMins >= program.startMinutes && currentMins < program.endMinutes;
+  }
+
+  void _scrollToOnAirProgram(List<Program> dayPrograms) {
+    if (_hasAutoScrolled) return;
+    final liveIndex = dayPrograms.indexWhere((p) => _isCurrentlyOnAir(p));
+    if (liveIndex != -1) {
+      _hasAutoScrolled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          final targetOffset = (liveIndex * 135.0).clamp(
+            0.0,
+            _scrollController.position.maxScrollExtent,
+          );
+          _scrollController.animateTo(
+            targetOffset,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -64,7 +100,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Schedule',
-            onPressed: () => ref.invalidate(weeklyScheduleProvider),
+            onPressed: () {
+              _hasAutoScrolled = false;
+              ref.invalidate(weeklyScheduleProvider);
+            },
           ),
         ],
       ),
@@ -120,6 +159,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
             height: 48,
             margin: const EdgeInsets.only(bottom: 8),
             child: ListView.builder(
+              controller: _dayScrollController,
               scrollDirection: Axis.horizontal,
               itemCount: _days.length,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -168,6 +208,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         if (selected) {
                           setState(() {
                             _selectedDay = index;
+                            _hasAutoScrolled = false;
                           });
                         }
                       },
@@ -196,6 +237,8 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     return titleMatch || presenterMatch;
                   }).toList();
                 }
+
+                _scrollToOnAirProgram(dayPrograms);
 
                 if (dayPrograms.isEmpty) {
                   return Center(
@@ -227,9 +270,11 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                   color: AppTheme.primaryRed,
                   backgroundColor: AppTheme.cardBackground,
                   onRefresh: () async {
+                    _hasAutoScrolled = false;
                     ref.invalidate(weeklyScheduleProvider);
                   },
                   child: ListView.builder(
+                    controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     itemCount: dayPrograms.length,
                     itemBuilder: (context, index) {
