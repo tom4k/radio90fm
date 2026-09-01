@@ -291,35 +291,47 @@ class ListenScreen extends ConsumerWidget {
         state == CustomAudioState.buffering ||
         state == CustomAudioState.reconnecting;
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        if (isLoading)
-          const SizedBox(
-            width: 104,
-            height: 104,
-            child: CircularProgressIndicator(
-              color: AppTheme.primaryRed,
-              strokeWidth: 4,
+    return GestureDetector(
+      onTap: () {
+        if (isPlaying || isLoading) {
+          audioHandler.pause();
+        } else {
+          audioHandler.play();
+        }
+      },
+      child: Container(
+        width: 96,
+        height: 96,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryRed,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryRed.withValues(alpha: isPlaying ? 0.6 : 0.35),
+              blurRadius: isPlaying ? 24 : 12,
+              spreadRadius: isPlaying ? 4 : 1,
             ),
-          ),
-        IconButton(
-          onPressed: () {
-            if (isPlaying || isLoading) {
-              audioHandler.pause();
-            } else {
-              audioHandler.play();
-            }
-          },
-          icon: Icon(
-            isPlaying || isLoading
-                ? Icons.pause_circle_filled_rounded
-                : Icons.play_circle_filled_rounded,
-            color: Colors.white,
-          ),
-          iconSize: 96,
+          ],
         ),
-      ],
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3.5,
+                  ),
+                )
+              : Icon(
+                  isPlaying
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 56,
+                ),
+        ),
+      ),
     );
   }
 

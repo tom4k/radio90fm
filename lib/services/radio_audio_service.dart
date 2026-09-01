@@ -207,6 +207,7 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   Future<void> play() async {
     _userIntentPlay = true;
     _reconnectAttempts = 0;
+    _setCustomState(CustomAudioState.connecting);
 
     if (_currentStreamUrl.isEmpty) {
       _currentStreamUrl = 'https://icecast.octosignals.com/radio90_final';
