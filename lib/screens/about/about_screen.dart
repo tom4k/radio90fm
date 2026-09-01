@@ -214,22 +214,6 @@ class AboutScreen extends StatelessWidget {
               alignment: WrapAlignment.center,
               children: [
                 _buildSocialButton(
-                  icon: Icons.android_rounded,
-                  label: 'Google Play',
-                  color: const Color(0xFF01875F),
-                  onTap: () => _launchUrl(
-                    'https://play.google.com/store/apps/details?id=com.radio90fm',
-                  ),
-                ),
-                _buildSocialButton(
-                  icon: Icons.apple_rounded,
-                  label: 'App Store',
-                  color: const Color(0xFF007AFF),
-                  onTap: () => _launchUrl(
-                    'https://apps.apple.com/in/app/radio-90-fm/id6477734699',
-                  ),
-                ),
-                _buildSocialButton(
                   icon: Icons.camera_alt_rounded,
                   label: 'Instagram',
                   color: const Color(0xFFE1306C),
