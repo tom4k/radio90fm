@@ -76,13 +76,12 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
 
       if (_isReconnecting) return;
 
-      if (isPlaying) {
-        if (processingState == ProcessingState.buffering ||
-            processingState == ProcessingState.loading) {
-          _setCustomState(CustomAudioState.buffering);
-        } else if (processingState == ProcessingState.ready) {
+      if (_userIntentPlay) {
+        if (isPlaying && processingState == ProcessingState.ready) {
           _setCustomState(CustomAudioState.playing);
           _reconnectAttempts = 0;
+        } else {
+          _setCustomState(CustomAudioState.connecting);
         }
       } else {
         if (processingState == ProcessingState.idle) {
