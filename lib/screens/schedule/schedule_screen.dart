@@ -85,17 +85,32 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     _hasAutoScrolled = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 200), () {
-        final key = _itemKeys[targetIndex];
-        if (key?.currentContext != null) {
-          Scrollable.ensureVisible(
-            key!.currentContext!,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            alignment: 0.05,
-          );
-        }
-      });
+      // Scroll day selector to current day chip
+      if (_dayScrollController.hasClients) {
+        final dayOffset = (_selectedDay * 75.0).clamp(0.0, _dayScrollController.position.maxScrollExtent);
+        _dayScrollController.animateTo(
+          dayOffset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      // Scroll program list to current live/next show
+      if (targetIndex > 0) {
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (_scrollController.hasClients) {
+            final estimatedOffset = (targetIndex * 145.0).clamp(
+              0.0,
+              _scrollController.position.maxScrollExtent,
+            );
+            _scrollController.animateTo(
+              estimatedOffset,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          }
+        });
+      }
     });
   }
 
