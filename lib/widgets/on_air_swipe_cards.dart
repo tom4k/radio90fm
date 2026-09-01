@@ -65,7 +65,7 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
           _buildLiveCard(onAir)
         else ...[
           SizedBox(
-            height: 210,
+            height: 180,
             child: PageView(
               controller: _pageController,
               onPageChanged: (page) {
@@ -79,7 +79,7 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           // Page Indicator Dots
           Row(
             mainAxisAlignment: MainAxisAlignment.center,

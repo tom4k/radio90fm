@@ -19,26 +19,26 @@ class ListenScreen extends ConsumerWidget {
     final currentState = audioStateAsync.value ?? audioHandler.currentCustomState;
 
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Large Prominent Radio 90 FM Logo
+            // Prominent Radio 90 FM Logo
             Center(
               child: Image.asset(
                 'assets/images/icon.png',
-                width: 320,
+                width: 250,
                 fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(height: 20),
 
             // SWIPEABLE ON AIR & UP NEXT CARDS
             onAirAsync.when(
               data: (onAir) => OnAirSwipeCards(onAir: onAir),
               loading: () => const LiquidGlassCard(
-                padding: EdgeInsets.symmetric(vertical: 40),
+                padding: EdgeInsets.symmetric(vertical: 30),
                 child: Center(
                   child: CircularProgressIndicator(color: AppTheme.primaryRed),
                 ),
@@ -53,12 +53,8 @@ class ListenScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 28),
-
             // AUDIO PLAYER CONTROLS
             _buildPlayerControl(context, currentState, audioHandler),
-
-            const SizedBox(height: 24),
 
             // Text Ticker Message
             _buildStatusTicker(currentState),
