@@ -58,6 +58,28 @@ export default function DashboardPage() {
   const [overrideTitle, setOverrideTitle] = useState("");
   const [overridePresenter, setOverridePresenter] = useState("");
   const [overrideDurationMinutes, setOverrideDurationMinutes] = useState(60);
+  const [overrideMode, setOverrideMode] = useState<"instant" | "scheduled">("instant");
+  const [overrideStartDateTime, setOverrideStartDateTime] = useState("");
+  const [overrideEndDateTime, setOverrideEndDateTime] = useState("");
+  const [overridesList, setOverridesList] = useState<any[]>([]);
+  const [loadingOverridesList, setLoadingOverridesList] = useState(false);
+
+  const fetchOverridesList = async () => {
+    setLoadingOverridesList(true);
+    try {
+      const res = await fetch("/api/v1/admin/live");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setOverridesList(json.data || []);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading overrides list", err);
+    } finally {
+      setLoadingOverridesList(false);
+    }
+  };
 
   // Broadcast notifications state
   const [notifTitle, setNotifTitle] = useState("");
@@ -431,8 +453,26 @@ export default function DashboardPage() {
     e.preventDefault();
     setMsg("");
     try {
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + overrideDurationMinutes * 60000);
+      let startsAt: Date;
+      let expiresAt: Date;
+
+      if (overrideMode === "instant") {
+        startsAt = new Date();
+        expiresAt = new Date(startsAt.getTime() + overrideDurationMinutes * 60000);
+      } else {
+        startsAt = new Date(overrideStartDateTime);
+        expiresAt = new Date(overrideEndDateTime);
+      }
+
+      if (isNaN(startsAt.getTime()) || isNaN(expiresAt.getTime())) {
+        setMsg("Please enter valid start and end dates/times.");
+        return;
+      }
+
+      if (expiresAt <= startsAt) {
+        setMsg("End date/time must be after start date/time.");
+        return;
+      }
 
       const res = await fetch("/api/v1/admin/live", {
         method: "POST",
@@ -440,7 +480,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           title: overrideTitle,
           presenter: overridePresenter,
-          startsAt: now.toISOString(),
+          startsAt: startsAt.toISOString(),
           expiresAt: expiresAt.toISOString(),
           enabled: true,
         }),
@@ -448,10 +488,17 @@ export default function DashboardPage() {
 
       const data = await res.json();
       if (data.success) {
-        setMsg("Live Override started!");
+        setMsg(
+          overrideMode === "instant"
+            ? "🚀 Live Override started immediately!"
+            : "📅 Live Override scheduled successfully!"
+        );
         setOverrideTitle("");
         setOverridePresenter("");
         fetchData(false);
+        fetchOverridesList();
+      } else {
+        setMsg(data.error?.message || "Failed to save Live Override");
       }
     } catch (err) {
       setMsg("Failed to start Live Override");
@@ -468,11 +515,29 @@ export default function DashboardPage() {
       if (data.success) {
         setMsg("✅ Live Override deactivated! Reverted to standard weekly schedule.");
         fetchData(false);
+        fetchOverridesList();
       } else {
         setMsg(data.error?.message || "Failed to deactivate Live Override");
       }
     } catch (err) {
       setMsg("Error deactivating Live Override");
+    }
+  }
+
+  async function handleDeleteOverrideItem(id: string) {
+    if (!confirm("Are you sure you want to remove this Live Override?")) return;
+    try {
+      const res = await fetch(`/api/v1/admin/live/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg("Live Override removed.");
+        fetchData(false);
+        fetchOverridesList();
+      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -1641,58 +1706,216 @@ export default function DashboardPage() {
 
               <form
                 onSubmit={handleStartOverride}
-                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4"
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-5"
               >
-                <h3 className="text-sm font-bold text-white">Start New Live Override</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Override Broadcast Title (e.g. Special College Day Live)"
-                    required
-                    value={overrideTitle}
-                    onChange={(e) => setOverrideTitle(e.target.value)}
-                    className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Presenter / Anchor"
-                    value={overridePresenter}
-                    onChange={(e) => setOverridePresenter(e.target.value)}
-                    className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
-                  />
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <h3 className="text-sm font-bold text-white">Create / Schedule Live Override</h3>
+
+                  {/* Mode Selector */}
+                  <div className="flex items-center space-x-2 bg-neutral-950 p-1 rounded-xl border border-neutral-800">
+                    <button
+                      type="button"
+                      onClick={() => setOverrideMode("instant")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        overrideMode === "instant"
+                          ? "bg-red-600 text-white font-bold shadow-sm"
+                          : "text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      ⚡ Start Immediately
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverrideMode("scheduled")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        overrideMode === "scheduled"
+                          ? "bg-red-600 text-white font-bold shadow-sm"
+                          : "text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      📅 Schedule Future Date & Time
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center space-x-3 text-xs text-neutral-300">
-                  <span>Duration (Minutes):</span>
-                  <input
-                    type="number"
-                    min={5}
-                    max={360}
-                    value={overrideDurationMinutes}
-                    onChange={(e) => setOverrideDurationMinutes(Number(e.target.value))}
-                    className="w-20 bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1 text-white text-center"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                      Override Program Title *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Special Annual Sports Day Live"
+                      required
+                      value={overrideTitle}
+                      onChange={(e) => setOverrideTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                      Presenter / Anchor Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Voice of Amal Jyothi"
+                      value={overridePresenter}
+                      onChange={(e) => setOverridePresenter(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
                 </div>
+
+                {overrideMode === "instant" ? (
+                  <div className="flex items-center space-x-3 text-xs text-neutral-300 bg-neutral-950/60 p-3 rounded-xl border border-neutral-800/80">
+                    <span className="font-semibold text-white">Broadcast Duration:</span>
+                    <input
+                      type="number"
+                      min={5}
+                      max={360}
+                      value={overrideDurationMinutes}
+                      onChange={(e) => setOverrideDurationMinutes(Number(e.target.value))}
+                      className="w-24 bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1 text-white text-center font-bold"
+                    />
+                    <span className="text-neutral-400">Minutes (starts right now)</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-950/60 p-4 rounded-xl border border-neutral-800/80">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                        Start Date & Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={overrideStartDateTime}
+                        onChange={(e) => setOverrideStartDateTime(e.target.value)}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-red-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                        End Date & Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={overrideEndDateTime}
+                        onChange={(e) => setOverrideEndDateTime(e.target.value)}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-red-600"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center space-x-3 pt-2">
                   <button
                     type="submit"
-                    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-md cursor-pointer"
+                    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-red-950/80 cursor-pointer flex items-center space-x-2"
                   >
-                    Activate Live Override Now
+                    <span>
+                      {overrideMode === "instant"
+                        ? "🚀 Activate Live Override Now"
+                        : "📅 Schedule Live Override"}
+                    </span>
                   </button>
 
                   {(onAir?.isLiveOverride || onAir?.data?.isLiveOverride) && (
                     <button
                       type="button"
                       onClick={handleDeactivateOverride}
-                      className="bg-neutral-800 hover:bg-neutral-700 text-red-400 text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer"
+                      className="bg-neutral-800 hover:bg-neutral-700 text-red-400 text-xs font-semibold px-4 py-3 rounded-xl transition cursor-pointer"
                     >
                       Deactivate Active Override
                     </button>
                   )}
                 </div>
               </form>
+
+              {/* OVERRIDES SCHEDULE & HISTORY TABLE */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span> Live Overrides List & Schedule
+                  </h3>
+                  <button
+                    onClick={fetchOverridesList}
+                    className="text-xs text-neutral-400 hover:text-white bg-neutral-800 px-3 py-1.5 rounded-lg border border-neutral-700"
+                  >
+                    🔄 Refresh List
+                  </button>
+                </div>
+
+                {overridesList.length === 0 ? (
+                  <div className="p-8 text-center text-neutral-500 text-xs">
+                    No active or scheduled live overrides found.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-neutral-800 rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-neutral-950 text-neutral-400 uppercase font-bold border-b border-neutral-800">
+                        <tr>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Override Title</th>
+                          <th className="px-4 py-3">Presenter</th>
+                          <th className="px-4 py-3">Start Time</th>
+                          <th className="px-4 py-3">End Time</th>
+                          <th className="px-4 py-3 text-right">Option</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/60">
+                        {overridesList.map((item) => {
+                          const now = new Date();
+                          const sAt = new Date(item.startsAt);
+                          const eAt = new Date(item.expiresAt);
+                          const isActiveNow = item.enabled && sAt <= now && eAt >= now;
+                          const isUpcoming = item.enabled && sAt > now;
+
+                          return (
+                            <tr key={item.id} className="hover:bg-neutral-800/40 transition">
+                              <td className="px-4 py-3">
+                                {isActiveNow ? (
+                                  <span className="bg-red-950 border border-red-800 text-red-400 px-2.5 py-1 rounded-full font-bold text-[10px] flex items-center gap-1.5 w-max">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping"></span>
+                                    LIVE NOW
+                                  </span>
+                                ) : isUpcoming ? (
+                                  <span className="bg-amber-950 border border-amber-800 text-amber-300 px-2.5 py-1 rounded-full font-bold text-[10px] flex items-center gap-1.5 w-max">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                                    SCHEDULED
+                                  </span>
+                                ) : (
+                                  <span className="bg-neutral-950 border border-neutral-800 text-neutral-500 px-2.5 py-1 rounded-full text-[10px] w-max block">
+                                    EXPIRED
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 font-bold text-white">{item.title}</td>
+                              <td className="px-4 py-3 text-neutral-400">{item.presenter || "—"}</td>
+                              <td className="px-4 py-3 font-mono text-neutral-300">
+                                {sAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
+                              </td>
+                              <td className="px-4 py-3 font-mono text-neutral-300">
+                                {eAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  onClick={() => handleDeleteOverrideItem(item.id)}
+                                  className="text-red-400 hover:text-red-200 bg-red-950/40 border border-red-900/60 px-2.5 py-1 rounded-md transition"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
