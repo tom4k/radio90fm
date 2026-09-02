@@ -65,7 +65,7 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
           _buildLiveCard(onAir)
         else ...[
           SizedBox(
-            height: 180,
+            height: 195,
             child: PageView(
               controller: _pageController,
               onPageChanged: (page) {
@@ -145,6 +145,7 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
 
   Widget _buildLiveCard(OnAirData onAir) {
     return LiquidGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       borderColor: !onAir.isNetworkAvailable
           ? Colors.amber.withValues(alpha: 0.5)
           : onAir.isLiveOverride
@@ -235,6 +236,7 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
 
   Widget _buildUpNextCard(OnAirData onAir) {
     return LiquidGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       borderColor: Colors.white.withValues(alpha: 0.18),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
