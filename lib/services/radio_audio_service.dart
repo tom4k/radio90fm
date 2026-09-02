@@ -29,6 +29,10 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   Stream<CustomAudioState> get customStateStream => _customStateController.stream;
   CustomAudioState _customState = CustomAudioState.idle;
 
+  static final Uri _logoUri = Uri.parse(
+    'https://raw.githubusercontent.com/tom4k/radio90fm/new_version_2.0/assets/images/icon.png',
+  );
+
   RadioAudioHandler() {
     _init();
   }
@@ -41,14 +45,14 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   }
 
   void _init() {
-    // Media item notification setup
+    // Media item notification setup with Logo & System Controls
     mediaItem.add(
-      const MediaItem(
+      MediaItem(
         id: 'radio90fm_stream',
         album: 'Radio 90 FM',
-        title: 'Voice of Amal Jyothi',
-        artist: 'Radio 90 FM Live',
-        artUri: null,
+        title: 'Radio 90 FM Live',
+        artist: 'Voice of Amal Jyothi',
+        artUri: _logoUri,
       ),
     );
 
@@ -68,7 +72,7 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
             MediaAction.pause,
             MediaAction.stop,
           },
-          androidCompactActionIndices: const [0, 1],
+          androidCompactActionIndices: const [0],
           processingState: _mapProcessingState(processingState),
           playing: isPlaying,
         ),
@@ -138,12 +142,14 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
         mediaItem.value?.copyWith(
           title: title,
           artist: presenter ?? 'Voice of Amal Jyothi',
+          artUri: _logoUri,
         ) ??
         MediaItem(
           id: 'radio90fm_stream',
           album: 'Radio 90 FM',
           title: title,
           artist: presenter ?? 'Voice of Amal Jyothi',
+          artUri: _logoUri,
         ),
       );
     }
