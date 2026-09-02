@@ -234,8 +234,9 @@ export default function DashboardPage() {
         console.error("Error loading on-air status", err);
       }
 
-      // 4. Notifications List
+      // 4. Notifications & Live Overrides Lists
       fetchNotificationsList();
+      fetchOverridesList();
     } finally {
       if (showFullLoader) {
         setLoading(false);
@@ -716,7 +717,10 @@ export default function DashboardPage() {
             </span>
           </button>
           <button
-            onClick={() => setActiveTab("override")}
+            onClick={() => {
+              setActiveTab("override");
+              fetchOverridesList();
+            }}
             className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${
               activeTab === "override"
                 ? "bg-red-600 text-white font-semibold shadow-lg shadow-red-950"
