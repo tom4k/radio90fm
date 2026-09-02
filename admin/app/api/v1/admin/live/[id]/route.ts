@@ -18,7 +18,8 @@ export async function DELETE(
   }
 
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
 
     await db.delete(liveOverrides).where(eq(liveOverrides.id, id));
 
