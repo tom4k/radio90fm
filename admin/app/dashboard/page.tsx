@@ -61,6 +61,8 @@ export default function DashboardPage() {
   const [overrideMode, setOverrideMode] = useState<"instant" | "scheduled">("instant");
   const [overrideStartDateTime, setOverrideStartDateTime] = useState("");
   const [overrideEndDateTime, setOverrideEndDateTime] = useState("");
+  const [overrideEnableCall, setOverrideEnableCall] = useState(true);
+  const [overrideEnableWhatsapp, setOverrideEnableWhatsapp] = useState(true);
   const [overridesList, setOverridesList] = useState<any[]>([]);
   const [loadingOverridesList, setLoadingOverridesList] = useState(false);
 
@@ -480,6 +482,8 @@ export default function DashboardPage() {
         body: JSON.stringify({
           title: overrideTitle,
           presenter: overridePresenter,
+          enableCall: overrideEnableCall,
+          enableWhatsapp: overrideEnableWhatsapp,
           startsAt: startsAt.toISOString(),
           expiresAt: expiresAt.toISOString(),
           enabled: true,
@@ -1810,6 +1814,29 @@ export default function DashboardPage() {
                   </div>
                 )}
 
+                <div className="flex items-center space-x-6 pt-1 bg-neutral-950/60 p-3 rounded-xl border border-neutral-800/80">
+                  <span className="text-xs font-semibold text-neutral-400">Interactive Actions:</span>
+                  <label className="flex items-center space-x-2 text-xs font-medium text-neutral-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={overrideEnableCall}
+                      onChange={(e) => setOverrideEnableCall(e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-700 text-red-600 focus:ring-red-600 bg-neutral-900"
+                    />
+                    <span>📞 Enable Call Live</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2 text-xs font-medium text-neutral-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={overrideEnableWhatsapp}
+                      onChange={(e) => setOverrideEnableWhatsapp(e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-700 text-emerald-600 focus:ring-emerald-600 bg-neutral-900"
+                    />
+                    <span>💬 Enable WhatsApp Live</span>
+                  </label>
+                </div>
+
                 <div className="flex items-center space-x-3 pt-2">
                   <button
                     type="submit"
@@ -1860,6 +1887,7 @@ export default function DashboardPage() {
                           <th className="px-4 py-3">Status</th>
                           <th className="px-4 py-3">Override Title</th>
                           <th className="px-4 py-3">Presenter</th>
+                          <th className="px-4 py-3">Interactive Actions</th>
                           <th className="px-4 py-3">Start Time</th>
                           <th className="px-4 py-3">End Time</th>
                           <th className="px-4 py-3 text-right">Option</th>
@@ -1872,6 +1900,9 @@ export default function DashboardPage() {
                           const eAt = new Date(item.expiresAt);
                           const isActiveNow = item.enabled && sAt <= now && eAt >= now;
                           const isUpcoming = item.enabled && sAt > now;
+                          const actionsText = [item.enableCall && "Calls", item.enableWhatsapp && "WhatsApp"]
+                            .filter(Boolean)
+                            .join(", ") || "None";
 
                           return (
                             <tr key={item.id} className="hover:bg-neutral-800/40 transition">
@@ -1894,6 +1925,7 @@ export default function DashboardPage() {
                               </td>
                               <td className="px-4 py-3 font-bold text-white">{item.title}</td>
                               <td className="px-4 py-3 text-neutral-400">{item.presenter || "—"}</td>
+                              <td className="px-4 py-3 text-emerald-400 font-medium">{actionsText}</td>
                               <td className="px-4 py-3 font-mono text-neutral-300">
                                 {sAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
                               </td>
