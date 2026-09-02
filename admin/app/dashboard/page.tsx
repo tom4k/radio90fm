@@ -458,6 +458,24 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleDeactivateOverride() {
+    setMsg("");
+    try {
+      const res = await fetch("/api/v1/admin/live", {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg("✅ Live Override deactivated! Reverted to standard weekly schedule.");
+        fetchData(false);
+      } else {
+        setMsg(data.error?.message || "Failed to deactivate Live Override");
+      }
+    } catch (err) {
+      setMsg("Error deactivating Live Override");
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/v1/admin/auth/logout", { method: "POST" });
     router.push("/login");
@@ -1580,10 +1598,52 @@ export default function DashboardPage() {
                 Instantly broadcast a special live announcement or emergency program overriding the regular schedule.
               </p>
 
+              {/* Active Override Status Banner */}
+              {onAir?.isLiveOverride || onAir?.data?.isLiveOverride ? (
+                <div className="bg-gradient-to-r from-red-950 via-neutral-900 to-neutral-900 border border-red-600 rounded-2xl p-6 shadow-2xl space-y-4 animate-in fade-in">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center space-x-3">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-red-400">
+                        LIVE OVERRIDE IS CURRENTLY ACTIVE
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleDeactivateOverride}
+                      className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg transition flex items-center space-x-2 cursor-pointer"
+                    >
+                      <span>⏹ Deactivate Live Override Now</span>
+                    </button>
+                  </div>
+
+                  <div className="border-t border-neutral-800 pt-3">
+                    <h3 className="text-base font-bold text-white">
+                      {onAir?.currentProgram?.title || onAir?.data?.currentProgram?.title || "Special Live Override"}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      Presenter: {onAir?.currentProgram?.presenter || onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between text-xs text-neutral-400">
+                  <div className="flex items-center space-x-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    <span>Standard Automated Broadcast Schedule is currently active.</span>
+                  </div>
+                </div>
+              )}
+
               <form
                 onSubmit={handleStartOverride}
                 className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4"
               >
+                <h3 className="text-sm font-bold text-white">Start New Live Override</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -1614,12 +1674,24 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition"
-                >
-                  Activate Live Override Now
-                </button>
+                <div className="flex items-center space-x-3 pt-2">
+                  <button
+                    type="submit"
+                    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-md cursor-pointer"
+                  >
+                    Activate Live Override Now
+                  </button>
+
+                  {(onAir?.isLiveOverride || onAir?.data?.isLiveOverride) && (
+                    <button
+                      type="button"
+                      onClick={handleDeactivateOverride}
+                      className="bg-neutral-800 hover:bg-neutral-700 text-red-400 text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer"
+                    >
+                      Deactivate Active Override
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
           )}

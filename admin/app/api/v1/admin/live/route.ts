@@ -76,3 +76,36 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE() {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
+  }
+
+  try {
+    // Disable all active live overrides so system reverts back to automated schedule
+    await db
+      .update(liveOverrides)
+      .set({ enabled: false, updatedAt: new Date() });
+
+    await db.insert(auditLogs).values({
+      id: crypto.randomUUID(),
+      adminUserId: session.userId,
+      action: "LIVE_OVERRIDE_STOPPED",
+      entityType: "live_override",
+      entityId: "all",
+      metadata: { action: "deactivated" },
+    });
+
+    return NextResponse.json({ success: true, message: "Live Override deactivated successfully" });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: { code: "SERVER_ERROR", message: error.message } },
+      { status: 500 }
+    );
+  }
+}
