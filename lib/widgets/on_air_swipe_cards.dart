@@ -174,10 +174,10 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
               const SizedBox(width: 6),
               Text(
                 !onAir.isNetworkAvailable
-                    ? '● OFFLINE'
+                    ? 'OFFLINE'
                     : onAir.isLiveOverride
                         ? 'SPECIAL LIVE PROGRAM'
-                        : '● LIVE NOW',
+                        : 'LIVE NOW',
                 style: TextStyle(
                   color: !onAir.isNetworkAvailable
                       ? Colors.amber

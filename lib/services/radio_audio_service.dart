@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:radio90fm/core/constants/app_constants.dart';
 
 enum CustomAudioState {
   idle,
@@ -24,6 +27,7 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   bool _isReconnecting = false;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
+  Timer? _liveMetadataPollTimer;
 
   final _customStateController = StreamController<CustomAudioState>.broadcast();
   Stream<CustomAudioState> get customStateStream => _customStateController.stream;
@@ -44,7 +48,42 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     _customStateController.add(state);
   }
 
+  void _startLiveMetadataPolling() {
+    _liveMetadataPollTimer?.cancel();
+    _fetchAndUpdateLiveMetadata();
+    _liveMetadataPollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _fetchAndUpdateLiveMetadata();
+    });
+  }
+
+  void _stopLiveMetadataPolling() {
+    _liveMetadataPollTimer?.cancel();
+  }
+
+  Future<void> _fetchAndUpdateLiveMetadata() async {
+    try {
+      final url = Uri.parse('${AppConstants.defaultApiBaseUrl}/public/on-air');
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          final prog = body['data']['currentProgram'];
+          if (prog != null) {
+            final title = prog['title'] ?? 'Radio 90 FM Live';
+            final presenter = prog['presenter'] ?? 'Voice of Amal Jyothi';
+            updateStreamUrl(
+              _currentStreamUrl.isEmpty ? AppConstants.emergencyStreamUrl : _currentStreamUrl,
+              title: title,
+              presenter: presenter,
+            );
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   void _init() {
+    _startLiveMetadataPolling();
     // Media item notification setup with Logo & System Controls
     mediaItem.add(
       MediaItem(
@@ -214,9 +253,10 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     _userIntentPlay = true;
     _reconnectAttempts = 0;
     _setCustomState(CustomAudioState.connecting);
+    _startLiveMetadataPolling();
 
     if (_currentStreamUrl.isEmpty) {
-      _currentStreamUrl = 'https://icecast.octosignals.com/radio90_final';
+      _currentStreamUrl = AppConstants.emergencyStreamUrl;
     }
 
     await _playUrl(_currentStreamUrl);
@@ -234,12 +274,14 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   Future<void> stop() async {
     _userIntentPlay = false;
     _reconnectTimer?.cancel();
+    _stopLiveMetadataPolling();
     await _player.stop();
     _setCustomState(CustomAudioState.idle);
   }
 
   void dispose() {
     _reconnectTimer?.cancel();
+    _stopLiveMetadataPolling();
     _connectivitySub?.cancel();
     _customStateController.close();
     _player.dispose();
