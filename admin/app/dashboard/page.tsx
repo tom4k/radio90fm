@@ -40,6 +40,15 @@ export default function DashboardPage() {
   const [userSuccess, setUserSuccess] = useState("");
   const [creatingUser, setCreatingUser] = useState(false);
 
+  // Super Admin Reset Password for specific admin user
+  const [resetUserTarget, setResetUserTarget] = useState<any>(null);
+  const [showResetUserModal, setShowResetUserModal] = useState(false);
+  const [resetUserNewPassword, setResetUserNewPassword] = useState("");
+  const [resetUserConfirmPassword, setResetUserConfirmPassword] = useState("");
+  const [resetUserError, setResetUserError] = useState("");
+  const [resetUserSuccess, setResetUserSuccess] = useState("");
+  const [resettingUserPass, setResettingUserPass] = useState(false);
+
   // Audio player state
   const [streamState, setStreamState] = useState<"idle" | "buffering" | "playing">("idle");
   const [audioVolume, setAudioVolume] = useState(0.8);
@@ -344,6 +353,51 @@ export default function DashboardPage() {
       }
     } catch (err) {
       setMsg("Error deleting user");
+    }
+  }
+
+  async function handleSuperAdminResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setResetUserError("");
+    setResetUserSuccess("");
+
+    if (!resetUserTarget) return;
+
+    if (resetUserNewPassword.length < 6) {
+      setResetUserError("New password must be at least 6 characters long.");
+      return;
+    }
+    if (resetUserNewPassword !== resetUserConfirmPassword) {
+      setResetUserError("Passwords do not match.");
+      return;
+    }
+
+    setResettingUserPass(true);
+    try {
+      const res = await fetch(`/api/v1/admin/users/${resetUserTarget.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: resetUserNewPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setResetUserError(data.error?.message || "Failed to reset password.");
+        setResettingUserPass(false);
+        return;
+      }
+
+      setResetUserSuccess(`Password for '${resetUserTarget.name}' reset successfully!`);
+      setResetUserNewPassword("");
+      setResetUserConfirmPassword("");
+      setResettingUserPass(false);
+      setTimeout(() => {
+        setShowResetUserModal(false);
+        setResetUserTarget(null);
+      }, 2000);
+    } catch (err: any) {
+      setResetUserError("Error resetting password.");
+      setResettingUserPass(false);
     }
   }
 
@@ -2394,6 +2448,20 @@ export default function DashboardPage() {
                                 {usr.createdAt ? new Date(usr.createdAt).toLocaleDateString("en-IN") : "—"}
                               </td>
                               <td className="px-4 py-3.5 text-right space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setResetUserTarget(usr);
+                                    setResetUserNewPassword("");
+                                    setResetUserConfirmPassword("");
+                                    setResetUserError("");
+                                    setResetUserSuccess("");
+                                    setShowResetUserModal(true);
+                                  }}
+                                  className="text-cyan-400 hover:text-cyan-200 bg-cyan-950/40 border border-cyan-900/60 px-2.5 py-1 rounded-md transition text-[11px]"
+                                  title={`Reset password for ${usr.name}`}
+                                >
+                                  🔑 Reset Password
+                                </button>
                                 {!isTom && (
                                   <>
                                     <button
@@ -2431,6 +2499,92 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {/* SUPER ADMIN RESET USER PASSWORD MODAL */}
+      {showResetUserModal && resetUserTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                🔑 Reset Password for {resetUserTarget.name}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowResetUserModal(false);
+                  setResetUserTarget(null);
+                }}
+                className="text-neutral-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-400">
+              Super Admin Reset: Set a new password for <span className="text-white font-semibold">{resetUserTarget.email}</span>.
+            </p>
+
+            {resetUserError && (
+              <div className="p-3 text-xs bg-red-950/80 border border-red-800 text-red-200 rounded-xl">
+                {resetUserError}
+              </div>
+            )}
+            {resetUserSuccess && (
+              <div className="p-3 text-xs bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl">
+                {resetUserSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleSuperAdminResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={resetUserNewPassword}
+                  onChange={(e) => setResetUserNewPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={resetUserConfirmPassword}
+                  onChange={(e) => setResetUserConfirmPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetUserModal(false);
+                    setResetUserTarget(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resettingUserPass}
+                  className="px-4 py-2 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl transition disabled:opacity-50"
+                >
+                  {resettingUserPass ? "Resetting..." : "Reset Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CHANGE PASSWORD MODAL */}
       {showChangePasswordModal && (
