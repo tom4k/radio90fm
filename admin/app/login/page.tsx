@@ -10,6 +10,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSuccess, setForgotSuccess] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -33,6 +42,53 @@ export default function LoginPage() {
     } catch (err: any) {
       setError("An error occurred. Please try again.");
       setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotError("");
+    setForgotSuccess("");
+
+    if (forgotNewPassword.length < 6) {
+      setForgotError("New password must be at least 6 characters.");
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError("Passwords do not match.");
+      return;
+    }
+
+    setForgotLoading(true);
+
+    try {
+      const res = await fetch("/api/v1/admin/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: forgotEmail,
+          newPassword: forgotNewPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setForgotError(data.error?.message || "Failed to reset password");
+        setForgotLoading(false);
+        return;
+      }
+
+      setForgotSuccess(data.message || "Password reset successfully! You can now log in.");
+      setEmail(forgotEmail);
+      setPassword(forgotNewPassword);
+      setForgotLoading(false);
+
+      setTimeout(() => {
+        setShowForgotModal(false);
+      }, 2500);
+    } catch (err: any) {
+      setForgotError("Failed to reset password. Please try again.");
+      setForgotLoading(false);
     }
   }
 
@@ -79,9 +135,23 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium leading-6 text-neutral-300">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium leading-6 text-neutral-300">
+                Password
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotEmail(email);
+                  setForgotError("");
+                  setForgotSuccess("");
+                  setShowForgotModal(true);
+                }}
+                className="text-xs font-semibold text-red-400 hover:text-red-300 transition"
+              >
+                Forgot Password?
+              </button>
+            </div>
             <div className="mt-2">
               <input
                 type="password"
@@ -104,6 +174,96 @@ export default function LoginPage() {
           </div>
         </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                🔑 Reset Admin Password
+              </h3>
+              <button
+                onClick={() => setShowForgotModal(false)}
+                className="text-neutral-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {forgotError && (
+              <div className="mb-4 p-3 text-xs bg-red-950/80 border border-red-800 text-red-200 rounded-lg">
+                {forgotError}
+              </div>
+            )}
+            {forgotSuccess && (
+              <div className="mb-4 p-3 text-xs bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-lg">
+                {forgotSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Registered Admin Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full rounded-md border-0 bg-neutral-950 py-2 text-white shadow-sm ring-1 ring-inset ring-neutral-700 placeholder:text-neutral-500 focus:ring-2 focus:ring-red-600 text-sm px-3"
+                  placeholder="admin@amaljyothi.ac.in"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={forgotNewPassword}
+                  onChange={(e) => setForgotNewPassword(e.target.value)}
+                  className="w-full rounded-md border-0 bg-neutral-950 py-2 text-white shadow-sm ring-1 ring-inset ring-neutral-700 placeholder:text-neutral-500 focus:ring-2 focus:ring-red-600 text-sm px-3"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={forgotConfirmPassword}
+                  onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                  className="w-full rounded-md border-0 bg-neutral-950 py-2 text-white shadow-sm ring-1 ring-inset ring-neutral-700 placeholder:text-neutral-500 focus:ring-2 focus:ring-red-600 text-sm px-3"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-md transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-md transition disabled:opacity-50"
+                >
+                  {forgotLoading ? "Resetting..." : "Reset Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

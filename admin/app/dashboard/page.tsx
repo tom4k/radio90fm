@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function DashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "schedule" | "override" | "stream" | "contacts" | "audit" | "notifications"
+    "overview" | "schedule" | "override" | "stream" | "contacts" | "audit" | "notifications" | "users"
   >("overview");
 
   const [loading, setLoading] = useState(true);
@@ -15,6 +15,30 @@ export default function DashboardPage() {
   const [onAir, setOnAir] = useState<any>(null);
   const [streamTestResult, setStreamTestResult] = useState<any>(null);
   const [testingStream, setTestingStream] = useState(false);
+
+  // Current Logged in User Profile
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Change Password Modal States
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [currentPassInput, setCurrentPassInput] = useState("");
+  const [newPassInput, setNewPassInput] = useState("");
+  const [confirmPassInput, setConfirmPassInput] = useState("");
+  const [changePassError, setChangePassError] = useState("");
+  const [changePassSuccess, setChangePassSuccess] = useState("");
+  const [changingPass, setChangingPass] = useState(false);
+
+  // Admin User Management States
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
+  const [userError, setUserError] = useState("");
+  const [userSuccess, setUserSuccess] = useState("");
+  const [creatingUser, setCreatingUser] = useState(false);
 
   // Audio player state
   const [streamState, setStreamState] = useState<"idle" | "buffering" | "playing">("idle");
@@ -164,6 +188,165 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const fetchUsersList = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await fetch("/api/v1/admin/users");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setUsersList(data.data.users || []);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching users list", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  async function handleChangePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setChangePassError("");
+    setChangePassSuccess("");
+
+    if (newPassInput.length < 6) {
+      setChangePassError("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassInput !== confirmPassInput) {
+      setChangePassError("Passwords do not match.");
+      return;
+    }
+
+    setChangingPass(true);
+    try {
+      const res = await fetch("/api/v1/admin/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: currentPassInput,
+          newPassword: newPassInput,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setChangePassError(data.error?.message || "Failed to change password.");
+        setChangingPass(false);
+        return;
+      }
+      setChangePassSuccess("Password updated successfully!");
+      setCurrentPassInput("");
+      setNewPassInput("");
+      setConfirmPassInput("");
+      setChangingPass(false);
+      setTimeout(() => {
+        setShowChangePasswordModal(false);
+      }, 2000);
+    } catch (err: any) {
+      setChangePassError("Error updating password.");
+      setChangingPass(false);
+    }
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    setUserError("");
+    setUserSuccess("");
+
+    if (!newUserName || !newUserEmail || !newUserPassword) {
+      setUserError("All fields are required.");
+      return;
+    }
+
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/v1/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          password: newUserPassword,
+          role: newUserRole,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setUserError(data.error?.message || "Failed to create user account.");
+        setCreatingUser(false);
+        return;
+      }
+      setUserSuccess(data.message || "Admin account created!");
+      setNewUserName("");
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserRole("ADMIN");
+      setCreatingUser(false);
+      setShowAddUserModal(false);
+      fetchUsersList();
+    } catch (err: any) {
+      setUserError("Error creating admin account.");
+      setCreatingUser(false);
+    }
+  }
+
+  async function handleUpdateUserRole(userId: string, newRole: string) {
+    try {
+      const res = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg(data.message);
+        fetchUsersList();
+      } else {
+        setMsg(data.error?.message || "Failed to update role");
+      }
+    } catch (err) {
+      setMsg("Error updating user role");
+    }
+  }
+
+  async function handleToggleUserActive(userId: string, currentActive: boolean) {
+    try {
+      const res = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !currentActive }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg(data.message);
+        fetchUsersList();
+      } else {
+        setMsg(data.error?.message || "Failed to toggle status");
+      }
+    } catch (err) {
+      setMsg("Error toggling user status");
+    }
+  }
+
+  async function handleDeleteUser(userId: string, name: string) {
+    if (!confirm(`Are you sure you want to delete admin account '${name}'?`)) return;
+    try {
+      const res = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg(data.message);
+        fetchUsersList();
+      } else {
+        setMsg(data.error?.message || "Failed to delete user");
+      }
+    } catch (err) {
+      setMsg("Error deleting user");
+    }
+  }
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -173,6 +356,17 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
+      // 0. Fetch logged in user profile
+      try {
+        const meRes = await fetch("/api/v1/admin/auth/me");
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.success) {
+            setCurrentUser(meData.data.user);
+          }
+        }
+      } catch (err) {}
+
       // 1. Station Config
       try {
         const stationRes = await fetch("/api/v1/admin/station");
@@ -678,9 +872,37 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center space-x-3 shrink-0">
+            {currentUser && (
+              <div className="hidden sm:flex flex-col items-end mr-1 text-right">
+                <span className="text-xs font-bold text-white flex items-center gap-1">
+                  {currentUser.name}
+                  {(currentUser.role === "SUPER_ADMIN" || (currentUser.email || "").toLowerCase().includes("tomkurian")) && (
+                    <span className="text-[10px] bg-amber-950/80 border border-amber-500/40 text-amber-300 font-extrabold px-1.5 py-0.2 rounded">
+                      SUPER
+                    </span>
+                  )}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-mono truncate max-w-[140px]">
+                  {currentUser.email}
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setChangePassError("");
+                setChangePassSuccess("");
+                setShowChangePasswordModal(true);
+              }}
+              className="text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border border-neutral-700/60"
+              title="Change Password"
+            >
+              🔑 Password
+            </button>
+
             <button
               onClick={handleLogout}
-              className="text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-3.5 py-1.5 rounded-lg transition"
+              className="text-xs font-semibold bg-red-950/60 hover:bg-red-900 border border-red-900/60 text-red-200 px-3 py-1.5 rounded-lg transition"
             >
               Sign Out
             </button>
@@ -768,6 +990,31 @@ export default function DashboardPage() {
               📢
             </span>
           </button>
+
+          {/* SUPER ADMIN USERS TAB */}
+          {(currentUser?.role === "SUPER_ADMIN" ||
+            (currentUser?.email || "").toLowerCase().includes("tomkurian") ||
+            (currentUser?.name || "").toLowerCase().includes("tomkurian")) && (
+            <button
+              onClick={() => {
+                setActiveTab("users");
+                fetchUsersList();
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between border ${
+                activeTab === "users"
+                  ? "bg-amber-600 border-amber-500 text-white font-semibold shadow-lg shadow-amber-950"
+                  : "bg-amber-950/30 border-amber-900/40 text-amber-300 hover:bg-amber-900/50 hover:text-amber-100"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span>👑</span>
+                <span>Admin Users</span>
+              </span>
+              <span className="text-[10px] bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 font-extrabold">
+                SUPER
+              </span>
+            </button>
+          )}
         </aside>
 
         {/* Main Content Area */}
@@ -2060,10 +2307,324 @@ export default function DashboardPage() {
               </form>
             </div>
           )}
+
+          {/* TAB 7: SUPER ADMIN USER MANAGEMENT */}
+          {activeTab === "users" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    👑 Admin User Management
+                  </h2>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Super Admin Console • Create admin accounts, assign Super Admin roles, & manage permissions.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setUserError("");
+                    setUserSuccess("");
+                    setShowAddUserModal(true);
+                  }}
+                  className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-amber-950/40 w-fit"
+                >
+                  <span>+ Create Admin Account</span>
+                </button>
+              </div>
+
+              {loadingUsers ? (
+                <div className="p-8 text-center bg-neutral-900 border border-neutral-800 rounded-2xl">
+                  <p className="text-sm text-neutral-400">Loading admin user database...</p>
+                </div>
+              ) : usersList.length === 0 ? (
+                <div className="p-8 text-center bg-neutral-900 border border-neutral-800 rounded-2xl">
+                  <p className="text-sm text-neutral-400">No admin accounts found.</p>
+                </div>
+              ) : (
+                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-neutral-950/80 text-neutral-400 border-b border-neutral-800 uppercase tracking-wider font-semibold">
+                        <tr>
+                          <th className="px-4 py-3">User</th>
+                          <th className="px-4 py-3">Email</th>
+                          <th className="px-4 py-3">Role</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Created</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/60">
+                        {usersList.map((usr) => {
+                          const isTom = (usr.email || "").toLowerCase().includes("tomkurian") || (usr.name || "").toLowerCase().includes("tomkurian");
+                          const isSuper = usr.role === "SUPER_ADMIN" || isTom;
+
+                          return (
+                            <tr key={usr.id} className="hover:bg-neutral-800/40 transition">
+                              <td className="px-4 py-3.5 font-bold text-white flex items-center gap-2">
+                                <span className="h-7 w-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs">
+                                  {isSuper ? "👑" : "🛡️"}
+                                </span>
+                                {usr.name}
+                              </td>
+                              <td className="px-4 py-3.5 text-neutral-300 font-mono">{usr.email}</td>
+                              <td className="px-4 py-3.5">
+                                {isSuper ? (
+                                  <span className="bg-amber-950 border border-amber-700/80 text-amber-300 px-2.5 py-1 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                                    👑 SUPER ADMIN
+                                  </span>
+                                ) : (
+                                  <span className="bg-red-950/60 border border-red-800/60 text-red-300 px-2.5 py-1 rounded-full font-semibold text-[10px] inline-flex items-center gap-1">
+                                    🛡️ ADMIN
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                {usr.active ? (
+                                  <span className="text-emerald-400 font-medium bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full text-[10px]">
+                                    ● Active
+                                  </span>
+                                ) : (
+                                  <span className="text-neutral-500 bg-neutral-950 border border-neutral-800 px-2 py-0.5 rounded-full text-[10px]">
+                                    ○ Inactive
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3.5 text-neutral-400 font-mono text-[11px]">
+                                {usr.createdAt ? new Date(usr.createdAt).toLocaleDateString("en-IN") : "—"}
+                              </td>
+                              <td className="px-4 py-3.5 text-right space-x-2">
+                                {!isTom && (
+                                  <>
+                                    <button
+                                      onClick={() => handleUpdateUserRole(usr.id, isSuper ? "ADMIN" : "SUPER_ADMIN")}
+                                      className="text-amber-400 hover:text-amber-200 bg-amber-950/40 border border-amber-900/60 px-2.5 py-1 rounded-md transition text-[11px]"
+                                    >
+                                      {isSuper ? "Make Admin" : "Make Super Admin"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleToggleUserActive(usr.id, usr.active)}
+                                      className="text-neutral-300 hover:text-white bg-neutral-800 border border-neutral-700 px-2.5 py-1 rounded-md transition text-[11px]"
+                                    >
+                                      {usr.active ? "Deactivate" : "Activate"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteUser(usr.id, usr.name)}
+                                      className="text-red-400 hover:text-red-200 bg-red-950/40 border border-red-900/60 px-2.5 py-1 rounded-md transition text-[11px]"
+                                    >
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
             </>
           )}
         </main>
       </div>
+
+      {/* CHANGE PASSWORD MODAL */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                🔑 Change Your Password
+              </h3>
+              <button
+                onClick={() => setShowChangePasswordModal(false)}
+                className="text-neutral-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {changePassError && (
+              <div className="p-3 text-xs bg-red-950/80 border border-red-800 text-red-200 rounded-xl">
+                {changePassError}
+              </div>
+            )}
+            {changePassSuccess && (
+              <div className="p-3 text-xs bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl">
+                {changePassSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={currentPassInput}
+                  onChange={(e) => setCurrentPassInput(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-red-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={newPassInput}
+                  onChange={(e) => setNewPassInput(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-red-600"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassInput}
+                  onChange={(e) => setConfirmPassInput(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-red-600"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChangePasswordModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={changingPass}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl transition disabled:opacity-50"
+                >
+                  {changingPass ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE NEW ADMIN USER MODAL */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                👑 Create New Admin Account
+              </h3>
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="text-neutral-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {userError && (
+              <div className="p-3 text-xs bg-red-950/80 border border-red-800 text-red-200 rounded-xl">
+                {userError}
+              </div>
+            )}
+            {userSuccess && (
+              <div className="p-3 text-xs bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl">
+                {userSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                  placeholder="e.g. John Doe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                  placeholder="admin@amaljyothi.ac.in"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Initial Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Account Privilege Role
+                </label>
+                <select
+                  value={newUserRole}
+                  onChange={(e) => setNewUserRole(e.target.value as any)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="ADMIN">🛡️ Standard Admin</option>
+                  <option value="SUPER_ADMIN">👑 Super Admin (Full Access)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddUserModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-xl transition disabled:opacity-50"
+                >
+                  {creatingUser ? "Creating..." : "Create Admin Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

