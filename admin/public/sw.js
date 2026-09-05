@@ -1,17 +1,15 @@
-const CACHE_NAME = "radio90-admin-v1";
+const CACHE_NAME = "radio90-admin-v2";
 const STATIC_ASSETS = [
-  "/",
-  "/dashboard",
-  "/login",
   "/manifest.json",
   "/logo.png",
   "/appicon.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
-  "/icons/apple-touch-icon.png"
+  "/icons/apple-touch-icon.png",
+  "/icons/maskable-icon-512x512.png"
 ];
 
-// Install Event - Pre-cache Static Assets
+// Install Event - Pre-cache Static Assets only (No protected HTML pages)
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -20,7 +18,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate Event - Clean old caches
+// Activate Event - Delete all old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -35,48 +33,47 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch Event - Network First Strategy for APIs, Cache First for Static Assets
+// Fetch Event
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignore non-GET requests or browser extension URLs
+  // Ignore non-GET requests or non-HTTP protocols
   if (request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
-  // Network-First strategy for API routes to guarantee fresh data
-  if (url.pathname.startsWith("/api/")) {
+  // Network-Only for Dashboard & Admin API requests to guarantee auth checks
+  if (url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/api/v1/admin")) {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(request);
-        })
+      fetch(request).catch(() => {
+        return new Response("Offline - Authentication Required", {
+          status: 401,
+          headers: { "Content-Type": "text/plain" },
+        });
+      })
     );
     return;
   }
 
-  // Stale-While-Revalidate strategy for static pages & assets
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+  // Cache-First for static media assets (icons, logo)
+  if (url.pathname.startsWith("/icons/") || url.pathname.endsWith(".png")) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        return cached || fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
+          return response;
+        });
+      })
+    );
+    return;
+  }
 
-      return cachedResponse || fetchPromise;
-    })
+  // Network-First for everything else
+  event.respondWith(
+    fetch(request).catch(() => caches.match(request))
   );
 });

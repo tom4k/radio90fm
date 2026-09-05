@@ -457,6 +457,10 @@ export default function DashboardPage() {
       // 0. Fetch logged in user profile
       try {
         const meRes = await fetch("/api/v1/admin/auth/me");
+        if (meRes.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
         if (meRes.ok) {
           const meData = await meRes.json();
           if (meData.success) {
@@ -842,7 +846,7 @@ export default function DashboardPage() {
 
   async function handleLogout() {
     await fetch("/api/v1/admin/auth/logout", { method: "POST" });
-    router.push("/login");
+    window.location.href = "/login";
   }
 
   // Program counts per day

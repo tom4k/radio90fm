@@ -24,8 +24,15 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/dashboard")) {
     if (!isValidSession) {
       const loginUrl = new URL("/login", request.url);
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      redirectResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      return redirectResponse;
     }
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+    return response;
   }
 
   // Login Page Route (Redirect to dashboard if already logged in)
