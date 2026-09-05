@@ -56,6 +56,11 @@ export default function RootPwaHomePage() {
   // On-Air Cards Swipe/Toggle state (0 = LIVE NOW, 1 = UP NEXT)
   const [cardIndex, setCardIndex] = useState<number>(0);
 
+  // Touch / Drag Swipe Gesture Refs for Cards
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const isDragging = useRef<boolean>(false);
+
   // Schedule Screen filter states
   const [selectedDay, setSelectedDay] = useState<number>(() => {
     const today = new Date().getDay(); // 0 is Sun, 1 is Mon...
@@ -148,6 +153,53 @@ export default function RootPwaHomePage() {
     } finally {
       setLoadingSchedule(false);
     }
+  };
+
+  // Swipe Gesture Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const deltaX = touchStartX.current - touchEndX.current;
+    if (deltaX > 40 && onAir?.nextTitle) {
+      setCardIndex(1); // Swipe left -> UP NEXT
+    } else if (deltaX < -40) {
+      setCardIndex(0); // Swipe right -> LIVE NOW
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    touchStartX.current = e.clientX;
+    touchEndX.current = null;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    touchEndX.current = e.clientX;
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const deltaX = touchStartX.current - touchEndX.current;
+    if (deltaX > 40 && onAir?.nextTitle) {
+      setCardIndex(1); // Drag left -> UP NEXT
+    } else if (deltaX < -40) {
+      setCardIndex(0); // Drag right -> LIVE NOW
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   // Stream URL setup
@@ -290,79 +342,99 @@ export default function RootPwaHomePage() {
               </div>
             )}
 
-            {/* On-Air & Up-Next Swipeable / Toggleable Glass Cards */}
+            {/* SWIPEABLE ON-AIR & UP-NEXT GLASS CARDS */}
             <div className="w-full space-y-3">
-              <div className="w-full p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
-                {cardIndex === 0 ? (
-                  /* LIVE CARD */
-                  <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#E50914]/15 border border-[#E50914]/40">
-                      <span className="w-2 h-2 rounded-full bg-[#E50914] animate-ping" />
-                      <span className="text-[11px] font-bold tracking-widest text-[#E50914]">
-                        {onAir?.isLiveOverride ? "SPECIAL LIVE PROGRAM" : "LIVE NOW"}
-                      </span>
-                    </div>
+              <div
+                className="w-full overflow-hidden relative cursor-grab active:cursor-grabbing select-none"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              >
+                <div
+                  className="flex transition-transform duration-300 ease-out w-full"
+                  style={{ transform: `translateX(-${cardIndex * 100}%)` }}
+                >
+                  {/* LIVE CARD */}
+                  <div className="w-full shrink-0 p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
+                    <div className="flex flex-col items-center text-center space-y-3">
+                      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#E50914]/15 border border-[#E50914]/40">
+                        <span className="w-2 h-2 rounded-full bg-[#E50914] animate-ping" />
+                        <span className="text-[11px] font-bold tracking-widest text-[#E50914]">
+                          {onAir?.isLiveOverride ? "SPECIAL LIVE PROGRAM" : "LIVE NOW"}
+                        </span>
+                      </div>
 
-                    <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
-                      {onAir?.title || "Radio 90 FM Live"}
-                    </h2>
-                    <p className="text-xs text-[#A3A3A3]">
-                      {onAir?.presenter ? `Hosted by ${onAir.presenter}` : "Radio 90: Voice of Amal Jyothi"}
-                    </p>
+                      <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
+                        {onAir?.title || "Radio 90 FM Live"}
+                      </h2>
+                      <p className="text-xs text-[#A3A3A3]">
+                        {onAir?.presenter ? `Hosted by ${onAir.presenter}` : "Radio 90: Voice of Amal Jyothi"}
+                      </p>
 
-                    {/* Studio Communication Action Buttons */}
-                    <div className="pt-2 flex items-center justify-center space-x-3 w-full">
-                      {(onAir?.enableCall ?? true) && (
-                        <a
-                          href={`tel:${activePhone}`}
-                          className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
-                          </svg>
-                          <span>Call Studio</span>
-                        </a>
-                      )}
+                      {/* Studio Communication Action Buttons */}
+                      <div className="pt-2 flex items-center justify-center space-x-3 w-full">
+                        {(onAir?.enableCall ?? true) && (
+                          <a
+                            href={`tel:${activePhone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
+                            </svg>
+                            <span>Call Studio</span>
+                          </a>
+                        )}
 
-                      {(onAir?.enableWhatsapp ?? true) && (
-                        <a
-                          href={`https://wa.me/${activeWhatsapp.replace(/[^0-9]/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.84 9.84 0 0012.04 2z" />
-                          </svg>
-                          <span>WhatsApp</span>
-                        </a>
-                      )}
+                        {(onAir?.enableWhatsapp ?? true) && (
+                          <a
+                            href={`https://wa.me/${activeWhatsapp.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.84 9.84 0 0012.04 2z" />
+                            </svg>
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  /* UP NEXT CARD */
-                  <div className="flex flex-col items-center text-center space-y-3 min-h-[140px] justify-center">
-                    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20">
-                      <svg className="w-3.5 h-3.5 text-[#E50914]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                      </svg>
-                      <span className="text-[11px] font-bold tracking-widest text-[#E50914]">UP NEXT PROGRAM</span>
-                    </div>
 
-                    <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
-                      {onAir?.nextTitle || "Stay Tuned"}
-                    </h2>
-                    <p className="text-xs text-[#A3A3A3]">
-                      {onAir?.nextPresenter ? `Hosted by ${onAir.nextPresenter}` : "Radio 90: Voice of Amal Jyothi"}
-                    </p>
-                    <span className="px-3 py-1 bg-white/5 rounded-lg text-[11px] text-white/60">
-                      Starts following current show
-                    </span>
-                  </div>
-                )}
+                  {/* UP NEXT CARD */}
+                  {onAir?.nextTitle && (
+                    <div className="w-full shrink-0 p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
+                      <div className="flex flex-col items-center text-center space-y-3 min-h-[140px] justify-center">
+                        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20">
+                          <svg className="w-3.5 h-3.5 text-[#E50914]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                          </svg>
+                          <span className="text-[11px] font-bold tracking-widest text-[#E50914]">UP NEXT PROGRAM</span>
+                        </div>
+
+                        <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
+                          {onAir.nextTitle}
+                        </h2>
+                        <p className="text-xs text-[#A3A3A3]">
+                          {onAir.nextPresenter ? `Hosted by ${onAir.nextPresenter}` : "Radio 90: Voice of Amal Jyothi"}
+                        </p>
+                        <span className="px-3 py-1 bg-white/5 rounded-lg text-[11px] text-white/60">
+                          Starts following current show
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Card Toggle Indicators */}
+              {/* Card Swipe Indicator Dots */}
               {onAir?.nextTitle && (
                 <div className="flex justify-center items-center space-x-2 pt-1">
                   <button
