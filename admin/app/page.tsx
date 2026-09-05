@@ -61,12 +61,19 @@ export default function RootPwaHomePage() {
   const touchEndX = useRef<number | null>(null);
   const isDragging = useRef<boolean>(false);
 
-  // Schedule Screen filter states
+  // Schedule Screen filter & auto-scroll states
   const [selectedDay, setSelectedDay] = useState<number>(() => {
     const today = new Date().getDay(); // 0 is Sun, 1 is Mon...
     return (today + 6) % 7; // Convert to 0=Mon, ..., 6=Sun
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasAutoScrolled, setHasAutoScrolled] = useState<boolean>(false);
+  const activeProgramRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset auto-scroll flag whenever day tab or screen tab changes
+  useEffect(() => {
+    setHasAutoScrolled(false);
+  }, [selectedDay, activeTab, searchQuery]);
 
   // 1. Initial Fetch & Auto-Polling (matching App Riverpod StreamProviders)
   useEffect(() => {
@@ -284,6 +291,42 @@ export default function RootPwaHomePage() {
     }
     return dayProgs;
   }, [programs, selectedDay, searchQuery]);
+
+  // Target index for auto-scrolling schedule (matching app logic)
+  const targetProgramIndex = useMemo(() => {
+    if (filteredPrograms.length === 0) return 0;
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    // 1. Try exact currently on-air show
+    let idx = filteredPrograms.findIndex((p) => isCurrentlyOnAir(p));
+
+    // 2. Fallback to next upcoming show
+    if (idx === -1) {
+      idx = filteredPrograms.findIndex((p) => p.startMinutes >= currentMins);
+    }
+
+    // 3. Fallback to first show
+    if (idx === -1) idx = 0;
+
+    return idx;
+  }, [filteredPrograms]);
+
+  // Auto-scroll to target program when schedule screen opens
+  useEffect(() => {
+    if (activeTab === "schedule" && !hasAutoScrolled && filteredPrograms.length > 0) {
+      const timer = setTimeout(() => {
+        if (activeProgramRef.current) {
+          activeProgramRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          setHasAutoScrolled(true);
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, selectedDay, filteredPrograms, hasAutoScrolled]);
 
   const activePhone = (onAir?.phone && onAir.phone !== "9496345029")
     ? onAir.phone
@@ -505,7 +548,10 @@ export default function RootPwaHomePage() {
             <div className="flex justify-between items-center pb-2">
               <h1 className="text-xl font-bold text-white">Broadcast Schedule</h1>
               <button
-                onClick={fetchSchedule}
+                onClick={() => {
+                  setHasAutoScrolled(false);
+                  fetchSchedule();
+                }}
                 className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/80 active:scale-95"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -553,7 +599,7 @@ export default function RootPwaHomePage() {
             </div>
 
             {/* Program Cards List */}
-            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1 scroll-smooth">
               {loadingSchedule ? (
                 <div className="py-12 flex justify-center">
                   <div className="w-8 h-8 border-4 border-[#E50914] border-t-transparent rounded-full animate-spin" />
@@ -563,11 +609,14 @@ export default function RootPwaHomePage() {
                   No programs found for {daysList[selectedDay].full}.
                 </div>
               ) : (
-                filteredPrograms.map((prog) => {
+                filteredPrograms.map((prog, idx) => {
                   const onAirNow = isCurrentlyOnAir(prog);
+                  const isTarget = idx === targetProgramIndex;
+
                   return (
                     <div
                       key={prog.id}
+                      ref={isTarget ? activeProgramRef : null}
                       className={`p-4 rounded-2xl border transition-all ${
                         onAirNow
                           ? "bg-[#1F0A0A] border-[#E50914] shadow-[0_0_20px_rgba(229,9,20,0.2)]"
@@ -698,7 +747,7 @@ export default function RootPwaHomePage() {
                   href="https://www.radio90.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs hover:bg-white hover:text-black transition-all"
+                  className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-[#ffffff] font-bold text-xs hover:bg-white hover:text-black transition-all"
                 >
                   Official Website
                 </a>
