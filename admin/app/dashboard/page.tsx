@@ -1038,7 +1038,7 @@ export default function DashboardPage() {
                 : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
             }`}
           >
-            <span>Station Contacts</span>
+            <span>Station & App Settings</span>
           </button>
           <button
             onClick={() => {
@@ -1329,6 +1329,62 @@ export default function DashboardPage() {
                       );
                     })()}
                   </div>
+                </div>
+              </div>
+
+              {/* QUICK MOBILE APP SETTINGS TOGGLE CARD */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>📱</span> Mobile App Navigation Settings
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Remotely enable or disable tabs and screens in the mobile app bottom navigation bar.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveStationConfig}
+                    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer self-start sm:self-auto"
+                  >
+                    Save App Settings
+                  </button>
+                </div>
+
+                <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold text-white">Mobile App Settings Screen</span>
+                      <span
+                        className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                          settingsEnabled
+                            ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
+                            : "bg-red-950 text-red-400 border border-red-800"
+                        }`}
+                      >
+                        {settingsEnabled ? "ENABLED (ACTIVE)" : "DISABLED (HIDDEN)"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400">
+                      When turned ON, the Settings tab is shown in the mobile app. When turned OFF, the Settings tab is completely hidden.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSettingsEnabled(!settingsEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                      settingsEnabled ? "bg-red-600" : "bg-neutral-700"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>
