@@ -9,7 +9,7 @@ export default function PwaRegister() {
         const path = window.location.pathname;
         const isAdminRoute = path.startsWith("/dashboard") || path.startsWith("/login");
         const swScript = isAdminRoute ? "/sw-admin.js" : "/sw.js";
-        const swScope = isAdminRoute ? "/dashboard" : "/";
+        const swScope = "/";
 
         navigator.serviceWorker
           .register(swScript, { scope: swScope })

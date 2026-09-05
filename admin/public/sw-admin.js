@@ -1,4 +1,4 @@
-const CACHE_NAME = "radio90-admin-pwa-v1";
+const CACHE_NAME = "radio90-admin-pwa-v2";
 const STATIC_ASSETS = [
   "/manifest-admin.json",
   "/logo.png",
@@ -42,8 +42,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-Only for Dashboard & Admin API requests to guarantee auth checks
-  if (url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/api/v1/admin")) {
+  // Network-Only for Dashboard, Login & Admin API requests to guarantee auth checks
+  if (url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/login") || url.pathname.startsWith("/api/v1/admin")) {
     event.respondWith(
       fetch(request).catch(() => {
         return new Response("Offline - Authentication Required", {

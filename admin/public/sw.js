@@ -1,4 +1,4 @@
-const CACHE_NAME = "radio90-pwa-v4";
+const CACHE_NAME = "radio90-pwa-v5";
 const STATIC_ASSETS = [
   "/manifest.json",
   "/manifest-admin.json",
