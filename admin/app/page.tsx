@@ -45,9 +45,10 @@ export default function RootPwaHomePage() {
   // Backend Live Data States
   const [stationConfig, setStationConfig] = useState<StationConfig | null>(null);
   const [onAir, setOnAir] = useState<OnAirData | null>(null);
+  const [loadingOnAir, setLoadingOnAir] = useState<boolean>(true);
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [loadingSchedule, setLoadingSchedule] = useState(true);
-  const [networkError, setNetworkError] = useState(false);
+  const [loadingSchedule, setLoadingSchedule] = useState<boolean>(true);
+  const [networkError, setNetworkError] = useState<boolean>(false);
 
   // Audio Player State
   const [audioState, setAudioState] = useState<"idle" | "connecting" | "buffering" | "playing" | "error" | "offline">("idle");
@@ -203,6 +204,8 @@ export default function RootPwaHomePage() {
       }
     } catch (err) {
       setNetworkError(true);
+    } finally {
+      setLoadingOnAir(false);
     }
   };
 
@@ -510,124 +513,133 @@ export default function RootPwaHomePage() {
               </div>
             )}
 
-            {/* SWIPEABLE ON-AIR & UP-NEXT GLASS CARDS */}
+            {/* SWIPEABLE ON-AIR & UP-NEXT GLASS CARDS OR INITIAL LOADING SPINNER */}
             <div className="w-full space-y-3">
-              <div
-                className="w-full overflow-hidden relative cursor-grab active:cursor-grabbing select-none"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-              >
-                <div
-                  className="flex transition-transform duration-300 ease-out w-full"
-                  style={{ transform: `translateX(-${cardIndex * 100}%)` }}
-                >
-                  {/* LIVE CARD */}
-                  <div className="w-full shrink-0 p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
-                    <div className="flex flex-col items-center text-center space-y-3">
-                      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#E50914]/15 border border-[#E50914]/40">
-                        <span className="w-2 h-2 rounded-full bg-[#E50914] animate-ping" />
-                        <span className="text-[11px] font-bold tracking-widest text-[#E50914]">
-                          {onAir?.isLiveOverride ? "SPECIAL LIVE PROGRAM" : "LIVE NOW"}
-                        </span>
+              {loadingOnAir && !onAir ? (
+                <div className="w-full p-8 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center space-y-3 min-h-[160px]">
+                  <div className="w-9 h-9 border-4 border-[#E50914] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-semibold text-white/60">Loading Live Program...</span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="w-full overflow-hidden relative cursor-grab active:cursor-grabbing select-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                  >
+                    <div
+                      className="flex transition-transform duration-300 ease-out w-full"
+                      style={{ transform: `translateX(-${cardIndex * 100}%)` }}
+                    >
+                      {/* LIVE CARD */}
+                      <div className="w-full shrink-0 p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
+                        <div className="flex flex-col items-center text-center space-y-3">
+                          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#E50914]/15 border border-[#E50914]/40">
+                            <span className="w-2 h-2 rounded-full bg-[#E50914] animate-ping" />
+                            <span className="text-[11px] font-bold tracking-widest text-[#E50914]">
+                              {onAir?.isLiveOverride ? "SPECIAL LIVE PROGRAM" : "LIVE NOW"}
+                            </span>
+                          </div>
+
+                          <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
+                            {onAir?.title || "Radio 90 FM Live"}
+                          </h2>
+                          <p className="text-xs text-[#A3A3A3]">
+                            {"Radio 90: Voice of Amal Jyothi"}
+                          </p>
+
+                          {/* Studio Communication Action Buttons */}
+                          <div className="pt-2 flex items-center justify-center space-x-3 w-full">
+                            {(onAir?.enableCall ?? true) && (
+                              <a
+                                href={`tel:${activePhone}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
+                              >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
+                                </svg>
+                                <span>Call Studio</span>
+                              </a>
+                            )}
+
+                            {(onAir?.enableWhatsapp ?? true) && (
+                              <a
+                                href={`https://wa.me/${activeWhatsapp.replace(/[^0-9]/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
+                              >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.84 9.84 0 0012.04 2z" />
+                                </svg>
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
-                        {onAir?.title || "Radio 90 FM Live"}
-                      </h2>
-                      <p className="text-xs text-[#A3A3A3]">
-                        {"Radio 90: Voice of Amal Jyothi"}
-                      </p>
+                      {/* UP NEXT CARD */}
+                      {onAir?.nextTitle && (
+                        <div className="w-full shrink-0 p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
+                          <div className="flex flex-col items-center text-center space-y-3 min-h-[140px] justify-center">
+                            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20">
+                              <svg className="w-3.5 h-3.5 text-[#E50914]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                              </svg>
+                              <span className="text-[11px] font-bold tracking-widest text-[#E50914]">UP NEXT PROGRAM</span>
+                            </div>
 
-                      {/* Studio Communication Action Buttons */}
-                      <div className="pt-2 flex items-center justify-center space-x-3 w-full">
-                        {(onAir?.enableCall ?? true) && (
-                          <a
-                            href={`tel:${activePhone}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.21.49 2.53.76 3.88.76a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.27 2.67.76 3.88a1 1 0 01-.27 1.11l-2.2 2.2z" />
-                            </svg>
-                            <span>Call Studio</span>
-                          </a>
-                        )}
-
-                        {(onAir?.enableWhatsapp ?? true) && (
-                          <a
-                            href={`https://wa.me/${activeWhatsapp.replace(/[^0-9]/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-semibold text-xs transition-all hover:bg-emerald-600 hover:text-white active:scale-95 shadow-lg"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.84 9.84 0 0012.04 2z" />
-                            </svg>
-                            <span>WhatsApp</span>
-                          </a>
-                        )}
-                      </div>
+                            <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
+                              {onAir.nextTitle}
+                            </h2>
+                            <p className="text-xs text-[#A3A3A3]">
+                              {"Radio 90: Voice of Amal Jyothi"}
+                            </p>
+                            <span className="px-3 py-1 bg-white/5 rounded-lg text-[11px] text-white/60">
+                              Starts following current show
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* UP NEXT CARD */}
+                  {/* Card Swipe Indicator Dots */}
                   {onAir?.nextTitle && (
-                    <div className="w-full shrink-0 p-5 rounded-3xl bg-[#141414]/80 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-[#E50914]/40">
-                      <div className="flex flex-col items-center text-center space-y-3 min-h-[140px] justify-center">
-                        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20">
-                          <svg className="w-3.5 h-3.5 text-[#E50914]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                          </svg>
-                          <span className="text-[11px] font-bold tracking-widest text-[#E50914]">UP NEXT PROGRAM</span>
-                        </div>
-
-                        <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
-                          {onAir.nextTitle}
-                        </h2>
-                        <p className="text-xs text-[#A3A3A3]">
-                          {"Radio 90: Voice of Amal Jyothi"}
-                        </p>
-                        <span className="px-3 py-1 bg-white/5 rounded-lg text-[11px] text-white/60">
-                          Starts following current show
-                        </span>
-                      </div>
+                    <div className="flex justify-center items-center space-x-2 pt-1">
+                      <button
+                        onClick={() => setCardIndex(0)}
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center space-x-1 ${
+                          cardIndex === 0
+                            ? "bg-[#E50914] text-white shadow-lg shadow-[#E50914]/40 border border-[#E50914]"
+                            : "bg-white/10 text-white/60 hover:bg-white/20"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${cardIndex === 0 ? "bg-white" : "bg-white/40"}`} />
+                        <span>LIVE NOW</span>
+                      </button>
+                      <button
+                        onClick={() => setCardIndex(1)}
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center space-x-1 ${
+                          cardIndex === 1
+                            ? "bg-[#E50914] text-white shadow-lg shadow-[#E50914]/40 border border-[#E50914]"
+                            : "bg-white/10 text-white/60 hover:bg-white/20"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${cardIndex === 1 ? "bg-white" : "bg-white/40"}`} />
+                        <span>UP NEXT</span>
+                      </button>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Card Swipe Indicator Dots */}
-              {onAir?.nextTitle && (
-                <div className="flex justify-center items-center space-x-2 pt-1">
-                  <button
-                    onClick={() => setCardIndex(0)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center space-x-1 ${
-                      cardIndex === 0
-                        ? "bg-[#E50914] text-white shadow-lg shadow-[#E50914]/40 border border-[#E50914]"
-                        : "bg-white/10 text-white/60 hover:bg-white/20"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${cardIndex === 0 ? "bg-white" : "bg-white/40"}`} />
-                    <span>LIVE NOW</span>
-                  </button>
-                  <button
-                    onClick={() => setCardIndex(1)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center space-x-1 ${
-                      cardIndex === 1
-                        ? "bg-[#E50914] text-white shadow-lg shadow-[#E50914]/40 border border-[#E50914]"
-                        : "bg-white/10 text-white/60 hover:bg-white/20"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${cardIndex === 1 ? "bg-white" : "bg-white/40"}`} />
-                    <span>UP NEXT</span>
-                  </button>
-                </div>
+                </>
               )}
             </div>
 
@@ -675,6 +687,7 @@ export default function RootPwaHomePage() {
               <button
                 onClick={() => {
                   setHasAutoScrolled(false);
+                  setLoadingSchedule(true);
                   fetchSchedule();
                 }}
                 className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/80 active:scale-95"
@@ -726,8 +739,9 @@ export default function RootPwaHomePage() {
             {/* Program Cards List */}
             <div className="space-y-3 flex-1 overflow-y-auto pr-1 scroll-smooth">
               {loadingSchedule ? (
-                <div className="py-12 flex justify-center">
-                  <div className="w-8 h-8 border-4 border-[#E50914] border-t-transparent rounded-full animate-spin" />
+                <div className="py-16 flex flex-col items-center justify-center space-y-3">
+                  <div className="w-9 h-9 border-4 border-[#E50914] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-semibold text-white/60">Loading Schedule...</span>
                 </div>
               ) : filteredPrograms.length === 0 ? (
                 <div className="text-center py-12 text-[#A3A3A3] text-sm">
@@ -842,7 +856,7 @@ export default function RootPwaHomePage() {
 
             {/* Social Links */}
             <div className="space-y-3 text-center">
-              <p className="text-xs font-bold text-white">Connect With Us</p>
+              <p className="text-xs font-bold text-[#FFFFFF]">Connect With Us</p>
               <div className="grid grid-cols-2 gap-2">
                 <a
                   href="https://www.instagram.com/radio90.fm?igsi=bDB0ZWoyZWI0anV3"
