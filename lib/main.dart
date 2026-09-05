@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:radio90fm/app/app.dart';
 import 'package:radio90fm/providers/app_providers.dart';
 import 'package:radio90fm/services/radio_audio_service.dart';
-
 import 'package:radio90fm/services/notification_service.dart';
 
 Future<void> main() async {
@@ -30,7 +29,7 @@ Future<void> main() async {
     debugPrint('AudioService init warning: $e');
   }
 
-  // 3. Initialize NotificationService in background without blocking splash screen / UI render
+  // 3. Initialize NotificationService in background
   NotificationService().init(prefs).catchError((e) {
     debugPrint('NotificationService init warning: $e');
   });
@@ -46,3 +45,4 @@ Future<void> main() async {
     ),
   );
 }
+

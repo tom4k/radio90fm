@@ -52,4 +52,7 @@ node_modules/
 admin/.env
 admin/.env.local
 admin/.env.production
+.kotlin/
+**/android/.kotlin/
+
 

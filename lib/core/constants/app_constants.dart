@@ -16,13 +16,15 @@ class AppConstants {
   static const String defaultPhone = '9496345029';
   static const String defaultWhatsapp = '9048389090';
   static const String defaultEmail = 'radio90@amaljyothi.ac.in';
-  static const String defaultWebsite = 'https://radio90.in';
+  static const String defaultWebsite = 'https://www.radio90.in';
   static const String shareAppUrl = 'https://onelink.to/243uae';
 
   // Social Links
-  static const String facebookUrl = 'https://www.facebook.com/fm.radio90/';
-  static const String instagramUrl = 'https://www.instagram.com/radio90.fm';
-  static const String youtubeUrl = 'https://youtube.com/@radio90fm13';
+  static const String facebookUrl = 'https://www.facebook.com/share/1HA2JvouSG/';
+  static const String instagramUrl =
+      'https://www.instagram.com/radio90.fm?igsi=bDB0ZWoyZWI0anV3';
+  static const String youtubeUrl =
+      'https://youtube.com/@radio90fmajce?si=Ibut1XLijXKQfXyo';
   static const String spotifyUrl =
       'https://open.spotify.com/show/68Ii81VKFBzRWKnEo2y1Oe';
   static const String twitterUrl = 'https://twitter.com/Radio90FM_AJCE';

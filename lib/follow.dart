@@ -20,7 +20,7 @@ class Follow extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () {
-                launchUrl(Uri.parse('https://www.facebook.com/fm.radio90/'));
+                launchUrl(Uri.parse('https://www.facebook.com/share/1HA2JvouSG/'));
               },
               icon: const FaIcon(
                 FontAwesomeIcons.facebook,
@@ -30,7 +30,7 @@ class Follow extends StatelessWidget {
             ),
             IconButton(
               onPressed: () {
-                launchUrl(Uri.parse('https://youtube.com/@radio90fm13'));
+                launchUrl(Uri.parse('https://youtube.com/@radio90fmajce?si=Ibut1XLijXKQfXyo'));
               },
               icon: const FaIcon(
                 FontAwesomeIcons.youtube,
@@ -40,7 +40,7 @@ class Follow extends StatelessWidget {
             ),
             IconButton(
               onPressed: () {
-                launchUrl(Uri.parse('https://www.instagram.com/radio90.fm'));
+                launchUrl(Uri.parse('https://www.instagram.com/radio90.fm?igsi=bDB0ZWoyZWI0anV3'));
               },
               icon: const FaIcon(
                 FontAwesomeIcons.instagram,

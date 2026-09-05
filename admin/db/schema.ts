@@ -37,16 +37,16 @@ export const stationConfig = pgTable("station_config", {
   defaultPhone: text("default_phone").notNull().default("9496345029"),
   defaultWhatsapp: text("default_whatsapp").notNull().default("9048389090"),
   email: text("email").notNull().default("radio90@amaljyothi.ac.in"),
-  website: text("website").notNull().default("https://radio90.in"),
+  website: text("website").notNull().default("https://www.radio90.in"),
   facebookUrl: text("facebook_url")
     .notNull()
-    .default("https://www.facebook.com/fm.radio90/"),
+    .default("https://www.facebook.com/share/1HA2JvouSG/"),
   instagramUrl: text("instagram_url")
     .notNull()
-    .default("https://www.instagram.com/radio90.fm"),
+    .default("https://www.instagram.com/radio90.fm?igsi=bDB0ZWoyZWI0anV3"),
   youtubeUrl: text("youtube_url")
     .notNull()
-    .default("https://youtube.com/@radio90fm13"),
+    .default("https://youtube.com/@radio90fmajce?si=Ibut1XLijXKQfXyo"),
   spotifyUrl: text("spotify_url")
     .notNull()
     .default("https://open.spotify.com/show/68Ii81VKFBzRWKnEo2y1Oe"),
@@ -131,6 +131,9 @@ export const broadcastNotifications = pgTable(
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     message: text("message").notNull(),
+    type: text("type").notNull().default("standard"),
+    actionUrl: text("action_url"),
+    targetPlatform: text("target_platform").notNull().default("all"),
     sentBy: text("sent_by").notNull().default("Station Admin"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

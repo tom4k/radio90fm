@@ -1,5 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:radio90fm/core/constants/app_constants.dart';
 
 class NotificationSettings {
   final bool enableNotifications;
@@ -68,6 +70,22 @@ class NotificationService {
   static const String keyQuietStartHour = 'notif_quiet_start_hour';
   static const String keyQuietEndHour = 'notif_quiet_end_hour';
 
+
+
+  static Future<void> handleNotificationPayload(String? payload) async {
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final String urlStr = payload.trim();
+      final uri = Uri.parse(urlStr);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        final fallbackUri = Uri.parse(AppConstants.shareAppUrl);
+        await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+      } catch (_) {}
+    }
+  }
+
   Future<void> init(SharedPreferences prefs) async {
     _prefs = prefs;
 
@@ -83,7 +101,21 @@ class NotificationService {
       iOS: iosInit,
     );
 
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        handleNotificationPayload(response.payload);
+      },
+    );
+
+    // Check if app was launched by tapping notification from cold start (terminated state)
+    final launchDetails = await _localNotifications.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp == true) {
+      final payload = launchDetails?.notificationResponse?.payload;
+      if (payload != null && payload.isNotEmpty) {
+        handleNotificationPayload(payload);
+      }
+    }
 
     // Request Android 13+ permissions
     final androidImplementation = _localNotifications.resolvePlatformSpecificImplementation<
@@ -140,6 +172,7 @@ class NotificationService {
     required String title,
     required String body,
     String? channelId,
+    String? payload,
   }) async {
     final settings = getSettings();
     if (!settings.enableNotifications) return;
@@ -162,6 +195,6 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _localNotifications.show(id, title, body, details);
+    await _localNotifications.show(id, title, body, details, payload: payload);
   }
 }

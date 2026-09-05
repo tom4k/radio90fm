@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, message } = body;
+    const { title, message, type, actionUrl, targetPlatform } = body;
 
     if (!title || !message) {
       return NextResponse.json(
@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
       id,
       title: String(title).trim(),
       message: String(message).trim(),
+      type: type ? String(type).trim() : "standard",
+      actionUrl: actionUrl ? String(actionUrl).trim() : null,
+      targetPlatform: targetPlatform ? String(targetPlatform).trim() : "all",
       sentBy: session.name || "Station Admin",
       createdAt: new Date(),
     };

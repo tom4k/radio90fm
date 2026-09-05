@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:radio90fm/core/constants/app_constants.dart';
@@ -101,6 +102,22 @@ final audioStateProvider = StreamProvider<CustomAudioState>((ref) {
   return audioHandler.customStateStream;
 });
 
+
+
+class AppUpdateAlertData {
+  final String title;
+  final String message;
+  final String actionUrl;
+
+  const AppUpdateAlertData({
+    required this.title,
+    required this.message,
+    required this.actionUrl,
+  });
+}
+
+final pendingAppUpdateAlertProvider = StateProvider<AppUpdateAlertData?>((ref) => null);
+
 // Auto-polling for Admin Broadcast Notifications
 final broadcastNotificationPollerProvider = StreamProvider<void>((ref) async* {
   final prefs = ref.watch(sharedPreferencesProvider);
@@ -117,16 +134,36 @@ final broadcastNotificationPollerProvider = StreamProvider<void>((ref) async* {
           final String notifId = latest['id'] ?? '';
           final String title = latest['title'] ?? 'Radio 90 FM Alert';
           final String message = latest['message'] ?? '';
+          final String type = latest['type'] ?? 'standard';
+          final String actionUrl = (latest['actionUrl'] != null && (latest['actionUrl'] as String).isNotEmpty)
+              ? latest['actionUrl']
+              : AppConstants.shareAppUrl;
+          final String targetPlatform = latest['targetPlatform'] ?? 'all';
+
+          // Platform filtering
+          if (targetPlatform == 'android' && defaultTargetPlatform != TargetPlatform.android) return;
+          if (targetPlatform == 'ios' && defaultTargetPlatform != TargetPlatform.iOS) return;
 
           if (notifId.isNotEmpty && notifId != lastSeenId) {
             lastSeenId = notifId;
             await prefs.setString('last_broadcast_notif_id', notifId);
 
+            final isUpdate = type == 'app_update';
+
             NotificationService().showNotification(
               id: notifId.hashCode,
               title: title,
               body: message,
+              payload: isUpdate ? actionUrl : null,
             );
+
+            if (isUpdate) {
+              ref.read(pendingAppUpdateAlertProvider.notifier).state = AppUpdateAlertData(
+                title: title,
+                message: message,
+                actionUrl: actionUrl,
+              );
+            }
           }
         }
       }

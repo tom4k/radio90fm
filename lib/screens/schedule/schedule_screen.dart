@@ -153,7 +153,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               },
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Search programs or presenters...',
+                hintText: 'Search programs...',
                 hintStyle: TextStyle(color: AppTheme.textSecondary.withValues(alpha: 0.7), fontSize: 14),
                 prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryRed, size: 20),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -267,9 +267,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
                 if (_searchQuery.isNotEmpty) {
                   dayPrograms = dayPrograms.where((p) {
-                    final titleMatch = p.title.toLowerCase().contains(_searchQuery);
-                    final presenterMatch = p.presenter.toLowerCase().contains(_searchQuery);
-                    return titleMatch || presenterMatch;
+                    return p.title.toLowerCase().contains(_searchQuery);
                   }).toList();
                 }
 
@@ -469,23 +467,15 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               ),
             ),
 
-            if (program.presenter.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(Icons.person_rounded, size: 14, color: AppTheme.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    program.presenter,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 6),
+            const Text(
+              'Radio 90: Voice of Amal Jyothi',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
-            ],
+            ),
 
             if (program.description.isNotEmpty) ...[
               const SizedBox(height: 8),

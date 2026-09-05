@@ -179,8 +179,8 @@ class AboutScreen extends StatelessWidget {
                   // Phone: Suggestions
                   _buildContactTile(
                     icon: Icons.support_agent_rounded,
-                    label: 'Suggestions: +91 9207057969',
-                    onTap: () => _launchUrl('tel:+919207057969'),
+                    label: 'Suggestions: +91 9048389090',
+                    onTap: () => _launchUrl('tel:+919048389090'),
                   ),
                   const SizedBox(height: 10),
 
@@ -217,19 +217,25 @@ class AboutScreen extends StatelessWidget {
                   icon: Icons.camera_alt_rounded,
                   label: 'Instagram',
                   color: const Color(0xFFE1306C),
-                  onTap: () => _launchUrl('https://www.instagram.com/radio90fm_official'),
+                  onTap: () => _launchUrl('https://www.instagram.com/radio90.fm?igsi=bDB0ZWoyZWI0anV3'),
+                ),
+                _buildSocialButton(
+                  icon: Icons.facebook_rounded,
+                  label: 'Facebook',
+                  color: const Color(0xFF1877F2),
+                  onTap: () => _launchUrl('https://www.facebook.com/share/1HA2JvouSG/'),
                 ),
                 _buildSocialButton(
                   icon: Icons.play_circle_fill_rounded,
                   label: 'YouTube',
                   color: const Color(0xFFFF0000),
-                  onTap: () => _launchUrl('https://youtube.com/@radio90fmajce'),
+                  onTap: () => _launchUrl('https://youtube.com/@radio90fmajce?si=Ibut1XLijXKQfXyo'),
                 ),
                 _buildSocialButton(
                   icon: Icons.language_rounded,
                   label: 'Official Website',
                   color: const Color(0xFF888888),
-                  onTap: () => _launchUrl('https://radio90.in'),
+                  onTap: () => _launchUrl('https://www.radio90.in'),
                 ),
               ],
             ),

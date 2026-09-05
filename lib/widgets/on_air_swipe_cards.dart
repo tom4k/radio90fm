@@ -206,19 +206,17 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
             overflow: TextOverflow.ellipsis,
           ),
 
-          if (onAir.presenter.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Presenter: ${onAir.presenter}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 4),
+          const Text(
+            'Radio 90: Voice of Amal Jyothi',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
             ),
-          ],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
 
           const SizedBox(height: 14),
 
@@ -271,19 +269,17 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
             overflow: TextOverflow.ellipsis,
           ),
 
-          if (onAir.nextPresenter != null && onAir.nextPresenter!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              'Presenter: ${onAir.nextPresenter}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 6),
+          const Text(
+            'Radio 90: Voice of Amal Jyothi',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
             ),
-          ],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
 
           const SizedBox(height: 12),
 

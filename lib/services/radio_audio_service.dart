@@ -90,7 +90,7 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
         id: 'radio90fm_stream',
         album: 'Radio 90 FM',
         title: 'Radio 90 FM Live',
-        artist: 'Voice of Amal Jyothi',
+        artist: 'Radio 90: Voice of Amal Jyothi',
         artUri: _logoUri,
       ),
     );
@@ -180,14 +180,14 @@ class RadioAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       mediaItem.add(
         mediaItem.value?.copyWith(
           title: title,
-          artist: presenter ?? 'Voice of Amal Jyothi',
+          artist: 'Radio 90: Voice of Amal Jyothi',
           artUri: _logoUri,
         ) ??
         MediaItem(
           id: 'radio90fm_stream',
           album: 'Radio 90 FM',
           title: title,
-          artist: presenter ?? 'Voice of Amal Jyothi',
+          artist: 'Radio 90: Voice of Amal Jyothi',
           artUri: _logoUri,
         ),
       );

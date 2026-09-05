@@ -10,6 +10,8 @@ import 'package:radio90fm/screens/settings/notification_settings_screen.dart';
 import 'package:radio90fm/widgets/liquid_background.dart';
 import 'package:radio90fm/providers/app_providers.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 class RadioApp extends ConsumerStatefulWidget {
   const RadioApp({super.key});
 
@@ -27,9 +29,72 @@ class _RadioAppState extends ConsumerState<RadioApp> {
     NotificationSettingsScreen(),
   ];
 
+  void _showAppUpdateDialog(BuildContext context, AppUpdateAlertData alertData) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1B2E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.system_update_rounded, color: Color(0xFFA855F7), size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                alertData.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          alertData.message,
+          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Later', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF9333EA),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final uri = Uri.parse(alertData.actionUrl);
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+            icon: const Icon(Icons.download_rounded, size: 18),
+            label: const Text('Update Now', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(broadcastNotificationPollerProvider);
+
+    ref.listen<AppUpdateAlertData?>(pendingAppUpdateAlertProvider, (previous, next) {
+      if (next != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showAppUpdateDialog(context, next);
+        });
+      }
+    });
 
     return MaterialApp(
       title: AppConstants.appName,

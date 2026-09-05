@@ -119,6 +119,9 @@ export default function DashboardPage() {
   // Broadcast notifications state
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
+  const [notifType, setNotifType] = useState<"standard" | "app_update">("standard");
+  const [notifActionUrl, setNotifActionUrl] = useState("https://onelink.to/243uae");
+  const [notifTargetPlatform, setNotifTargetPlatform] = useState<"all" | "android" | "ios">("all");
   const [sendingNotif, setSendingNotif] = useState(false);
   const [notificationsList, setNotificationsList] = useState<any[]>([]);
   const [loadingNotifsList, setLoadingNotifsList] = useState(false);
@@ -148,13 +151,20 @@ export default function DashboardPage() {
       const res = await fetch("/api/v1/admin/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: notifTitle, message: notifMessage }),
+        body: JSON.stringify({
+          title: notifTitle,
+          message: notifMessage,
+          type: notifType,
+          actionUrl: notifType === "app_update" ? notifActionUrl : null,
+          targetPlatform: notifTargetPlatform,
+        }),
       });
       const json = await res.json();
       if (json.success) {
         setNotifTitle("");
         setNotifMessage("");
-        setMsg("🚀 Broadcast push notification sent to all mobile users!");
+        setNotifType("standard");
+        setMsg("🚀 Broadcast push notification sent to mobile users!");
         fetchNotificationsList();
       } else {
         setMsg(json.error?.message || "Failed to send notification");
@@ -841,8 +851,7 @@ export default function DashboardPage() {
         if (scheduleSearch.trim()) {
           const q = scheduleSearch.toLowerCase();
           const titleMatch = (p.title || "").toLowerCase().includes(q);
-          const presenterMatch = (p.presenter || "").toLowerCase().includes(q);
-          return titleMatch || presenterMatch;
+          return titleMatch;
         }
         return true;
       })
@@ -1231,9 +1240,6 @@ export default function DashboardPage() {
                               {curProg?.title || "Radio 90 FM Broadcast"}
                             </div>
                             <div className="text-xs text-neutral-300 space-y-1 mt-1">
-                              <div>
-                                Presenter: <span className="font-semibold text-white">{curProg?.presenter || "Voice of Amal Jyothi"}</span>
-                              </div>
                               {curProg?.startMinutes !== undefined && (
                                 <div className="text-neutral-400 font-mono">
                                   Schedule Slot: {minutesToFormattedTime(curProg.startMinutes)} – {minutesToFormattedTime(curProg.endMinutes)}
@@ -1306,9 +1312,6 @@ export default function DashboardPage() {
                             {nextProg.title}
                           </div>
                           <div className="text-xs text-neutral-300 space-y-1">
-                            <div>
-                              Presenter: <span className="font-semibold text-white">{nextProg.presenter || "Voice of Amal Jyothi"}</span>
-                            </div>
                             {nextProg.startMinutes !== undefined && (
                               <div className="text-neutral-400 font-mono">
                                 Scheduled Time: {minutesToFormattedTime(nextProg.startMinutes)} {nextProg.endMinutes !== undefined ? `– ${minutesToFormattedTime(nextProg.endMinutes)}` : ""}
@@ -1411,18 +1414,7 @@ export default function DashboardPage() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
-                        Presenter Name
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Voice of Amal Jyothi"
-                        value={newProgPresenter}
-                        onChange={(e) => setNewProgPresenter(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
-                      />
-                    </div>
+
 
                     <div>
                       <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
@@ -1549,7 +1541,7 @@ export default function DashboardPage() {
                   <div className="relative flex-1">
                     <input
                       type="text"
-                      placeholder="Search program by title or presenter..."
+                      placeholder="Search program by title..."
                       value={scheduleSearch}
                       onChange={(e) => setScheduleSearch(e.target.value)}
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-red-600"
@@ -1626,11 +1618,7 @@ export default function DashboardPage() {
                             {p.title}
                           </div>
 
-                          <div className="text-xs text-neutral-400 flex items-center space-x-4">
-                            <span>
-                              Presenter: <strong className="text-neutral-200">{p.presenter || "Voice of Amal Jyothi"}</strong>
-                            </span>
-                          </div>
+
                         </div>
 
                         <div className="flex items-center space-x-3 self-end sm:self-center">
@@ -1675,7 +1663,6 @@ export default function DashboardPage() {
                           <th className="px-4 py-3">Day</th>
                           <th className="px-4 py-3">Time Range</th>
                           <th className="px-4 py-3">Program Title</th>
-                          <th className="px-4 py-3">Presenter</th>
                           <th className="px-4 py-3">Actions Enabled</th>
                           <th className="px-4 py-3 text-right">Options</th>
                         </tr>
@@ -1690,7 +1677,6 @@ export default function DashboardPage() {
                               {minutesToFormattedTime(p.startMinutes)} – {minutesToFormattedTime(p.endMinutes)}
                             </td>
                             <td className="px-4 py-3 font-bold text-white">{p.title}</td>
-                            <td className="px-4 py-3 text-neutral-400">{p.presenter || "—"}</td>
                             <td className="px-4 py-3 text-emerald-400 font-medium">
                               {[p.enableCall && "Calls", p.enableWhatsapp && "WhatsApp"]
                                 .filter(Boolean)
@@ -1737,6 +1723,37 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
+                <div className="flex items-center space-x-2 bg-neutral-950 p-1.5 rounded-xl border border-neutral-800 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotifType("standard");
+                    }}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
+                      notifType === "standard"
+                        ? "bg-red-600 text-white shadow-md"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <span>📢 Standard Announcement</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotifType("app_update");
+                      if (!notifTitle) setNotifTitle("🎉 New App Update Available!");
+                      if (!notifMessage) setNotifMessage("A new version of Radio 90 FM is now available on the App Store & Play Store. Tap to update now!");
+                    }}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
+                      notifType === "app_update"
+                        ? "bg-purple-600 text-white shadow-md"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <span>📲 App Update Alert</span>
+                  </button>
+                </div>
+
                 <form onSubmit={handleSendBroadcastNotif} className="space-y-4 pt-2">
                   <div>
                     <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
@@ -1745,7 +1762,7 @@ export default function DashboardPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Special Live Broadcast Starting Now!"
+                      placeholder={notifType === "app_update" ? "e.g. 🎉 New App Update Available!" : "e.g. Special Live Broadcast Starting Now!"}
                       value={notifTitle}
                       onChange={(e) => setNotifTitle(e.target.value)}
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600 placeholder-neutral-600"
@@ -1759,17 +1776,54 @@ export default function DashboardPage() {
                     <textarea
                       required
                       rows={3}
-                      placeholder="e.g. Tune in to Radio 90 FM for live interaction with our special guest!"
+                      placeholder={notifType === "app_update" ? "e.g. A new version of Radio 90 FM is now available. Tap to update!" : "e.g. Tune in to Radio 90 FM for live interaction!"}
                       value={notifMessage}
                       onChange={(e) => setNotifMessage(e.target.value)}
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600 placeholder-neutral-600"
                     ></textarea>
                   </div>
 
+                  {notifType === "app_update" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-purple-950/20 border border-purple-900/40 p-4 rounded-xl">
+                      <div>
+                        <label className="block text-xs font-semibold text-purple-300 mb-1.5">
+                          Store / Update Link (URL) *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={notifActionUrl}
+                          onChange={(e) => setNotifActionUrl(e.target.value)}
+                          placeholder="e.g. https://onelink.to/243uae"
+                          className="w-full bg-neutral-950 border border-purple-900/60 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-purple-300 mb-1.5">
+                          Target Devices
+                        </label>
+                        <select
+                          value={notifTargetPlatform}
+                          onChange={(e: any) => setNotifTargetPlatform(e.target.value)}
+                          className="w-full bg-neutral-950 border border-purple-900/60 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="all">All Devices (Auto Detect Store)</option>
+                          <option value="android">Android Only (Play Store)</option>
+                          <option value="ios">iOS Only (App Store)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     disabled={sendingNotif}
-                    className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-50 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-red-950/80 transition flex items-center justify-center space-x-2 cursor-pointer"
+                    className={`w-full sm:w-auto font-bold text-sm px-6 py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer ${
+                      notifType === "app_update"
+                        ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-950/80"
+                        : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-red-950/80"
+                    }`}
                   >
                     {sendingNotif ? (
                       <>
@@ -1778,7 +1832,7 @@ export default function DashboardPage() {
                       </>
                     ) : (
                       <>
-                        <span>🚀 Send Broadcast Notification</span>
+                        <span>{notifType === "app_update" ? "📲 Send App Update Notification" : "🚀 Send Broadcast Notification"}</span>
                       </>
                     )}
                   </button>
@@ -1808,8 +1862,10 @@ export default function DashboardPage() {
                     <table className="w-full text-left text-xs text-neutral-300">
                       <thead className="bg-neutral-950 text-neutral-400 font-semibold border-b border-neutral-800">
                         <tr>
+                          <th className="px-4 py-3">Type</th>
                           <th className="px-4 py-3">Title</th>
                           <th className="px-4 py-3">Message</th>
+                          <th className="px-4 py-3">Action / Link</th>
                           <th className="px-4 py-3">Sent By</th>
                           <th className="px-4 py-3">Time</th>
                         </tr>
@@ -1817,8 +1873,22 @@ export default function DashboardPage() {
                       <tbody className="divide-y divide-neutral-800/60">
                         {notificationsList.map((notif: any) => (
                           <tr key={notif.id} className="hover:bg-neutral-850/50 transition">
+                            <td className="px-4 py-3">
+                              {notif.type === "app_update" ? (
+                                <span className="bg-purple-950 border border-purple-800 text-purple-300 font-bold px-2 py-0.5 rounded text-[10px]">
+                                  📲 App Update
+                                </span>
+                              ) : (
+                                <span className="bg-neutral-950 border border-neutral-800 text-neutral-400 font-semibold px-2 py-0.5 rounded text-[10px]">
+                                  📢 Standard
+                                </span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 font-semibold text-white">{notif.title}</td>
                             <td className="px-4 py-3 text-neutral-300">{notif.message}</td>
+                            <td className="px-4 py-3 text-purple-400 font-mono text-[11px] max-w-[150px] truncate">
+                              {notif.actionUrl || "—"}
+                            </td>
                             <td className="px-4 py-3 text-neutral-400">{notif.sentBy || "Admin"}</td>
                             <td className="px-4 py-3 text-neutral-500 font-mono">
                               {new Date(notif.createdAt).toLocaleString()}
@@ -1870,15 +1940,7 @@ export default function DashboardPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-400 mb-1">Presenter Name</label>
-                    <input
-                      type="text"
-                      value={editProgPresenter}
-                      onChange={(e) => setEditProgPresenter(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
-                    />
-                  </div>
+
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -1999,9 +2061,7 @@ export default function DashboardPage() {
                     <h3 className="text-base font-bold text-white">
                       {onAir?.currentProgram?.title || onAir?.data?.currentProgram?.title || "Special Live Override"}
                     </h3>
-                    <p className="text-xs text-neutral-400 mt-1">
-                      Presenter: {onAir?.currentProgram?.presenter || onAir?.data?.currentProgram?.presenter || "Voice of Amal Jyothi"}
-                    </p>
+
                   </div>
                 </div>
               ) : (
@@ -2047,7 +2107,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
                   <div>
                     <label className="block text-xs font-semibold text-neutral-400 mb-1">
                       Override Program Title *
@@ -2058,19 +2118,6 @@ export default function DashboardPage() {
                       required
                       value={overrideTitle}
                       onChange={(e) => setOverrideTitle(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-400 mb-1">
-                      Presenter / Anchor Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Voice of Amal Jyothi"
-                      value={overridePresenter}
-                      onChange={(e) => setOverridePresenter(e.target.value)}
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600"
                     />
                   </div>
@@ -2191,7 +2238,6 @@ export default function DashboardPage() {
                         <tr>
                           <th className="px-4 py-3">Status</th>
                           <th className="px-4 py-3">Override Title</th>
-                          <th className="px-4 py-3">Presenter</th>
                           <th className="px-4 py-3">Interactive Actions</th>
                           <th className="px-4 py-3">Start Time</th>
                           <th className="px-4 py-3">End Time</th>
@@ -2229,7 +2275,6 @@ export default function DashboardPage() {
                                 )}
                               </td>
                               <td className="px-4 py-3 font-bold text-white">{item.title}</td>
-                              <td className="px-4 py-3 text-neutral-400">{item.presenter || "—"}</td>
                               <td className="px-4 py-3 text-emerald-400 font-medium">{actionsText}</td>
                               <td className="px-4 py-3 font-mono text-neutral-300">
                                 {sAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
