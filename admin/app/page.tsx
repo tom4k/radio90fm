@@ -3,16 +3,19 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 
-// Types
+// Types matching Flutter App models
 interface OnAirData {
+  isLiveOverride: boolean;
+  isNetworkAvailable: boolean;
   title: string;
+  description: string;
+  presenter: string;
+  nextTitle?: string | null;
+  nextPresenter?: string | null;
   phone: string;
   whatsapp: string;
   enableCall: boolean;
   enableWhatsapp: boolean;
-  isLiveOverride: boolean;
-  nextTitle?: string | null;
-  isNetworkAvailable?: boolean;
 }
 
 interface Program {
@@ -35,34 +38,11 @@ interface StationConfig {
   settingsEnabled?: boolean;
 }
 
-interface NotificationSettings {
-  enableNotifications: boolean;
-  enableShowReminders: boolean;
-  reminderLeadMinutes: number;
-  enableLiveAlerts: boolean;
-  enableSound: boolean;
-  enableVibration: boolean;
-  quietHoursEnabled: boolean;
-  quietStartHour: number;
-  quietEndHour: number;
-}
-
-const DEFAULT_SETTINGS: NotificationSettings = {
-  enableNotifications: true,
-  enableShowReminders: true,
-  reminderLeadMinutes: 5,
-  enableLiveAlerts: true,
-  enableSound: true,
-  enableVibration: true,
-  quietHoursEnabled: false,
-  quietStartHour: 22,
-  quietEndHour: 7,
-};
-
 export default function RootPwaHomePage() {
-  const [activeTab, setActiveTab] = useState<"listen" | "schedule" | "about" | "settings">("listen");
+  // Navigation Tabs: Listen, Schedule, About (No Settings Tab)
+  const [activeTab, setActiveTab] = useState<"listen" | "schedule" | "about">("listen");
 
-  // Station & On-Air Data
+  // Backend Live Data States
   const [stationConfig, setStationConfig] = useState<StationConfig | null>(null);
   const [onAir, setOnAir] = useState<OnAirData | null>(null);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -73,7 +53,7 @@ export default function RootPwaHomePage() {
   const [audioState, setAudioState] = useState<"idle" | "connecting" | "buffering" | "playing" | "error" | "offline">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // On-Air Cards Swipe/Toggle state
+  // On-Air Cards Swipe/Toggle state (0 = LIVE NOW, 1 = UP NEXT)
   const [cardIndex, setCardIndex] = useState<number>(0);
 
   // Schedule Screen filter states
@@ -83,41 +63,27 @@ export default function RootPwaHomePage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Notification Settings state
-  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
-
-  // Load notification settings from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("radio90_notification_settings");
-      if (saved) {
-        setNotifSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(saved) });
-      }
-    } catch (e) {
-      console.error("Error loading notification settings", e);
-    }
-  }, []);
-
-  const saveSettings = (newSettings: NotificationSettings) => {
-    setNotifSettings(newSettings);
-    try {
-      localStorage.setItem("radio90_notification_settings", JSON.stringify(newSettings));
-    } catch (e) {
-      console.error("Error saving notification settings", e);
-    }
-  };
-
-  // Fetch Station Config & On-Air & Schedule
+  // 1. Initial Fetch & Auto-Polling (matching App Riverpod StreamProviders)
   useEffect(() => {
     fetchConfig();
     fetchOnAir();
     fetchSchedule();
 
-    const interval = setInterval(() => {
+    // Poll On-Air every 8 seconds (matching app's onAirProvider)
+    const onAirInterval = setInterval(() => {
       fetchOnAir();
-    }, 15000); // refresh every 15s
+    }, 8000);
 
-    return () => clearInterval(interval);
+    // Poll Config & Schedule every 30 seconds (matching app's stationConfigProvider & weeklyScheduleProvider)
+    const configScheduleInterval = setInterval(() => {
+      fetchConfig();
+      fetchSchedule();
+    }, 30000);
+
+    return () => {
+      clearInterval(onAirInterval);
+      clearInterval(configScheduleInterval);
+    };
   }, []);
 
   const fetchConfig = async () => {
@@ -140,7 +106,26 @@ export default function RootPwaHomePage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.data) {
-          setOnAir(data.data);
+          const raw = data.data;
+          const cur = raw.currentProgram || {};
+          const next = raw.nextProgram;
+          const contacts = raw.contacts || {};
+
+          const parsedOnAir: OnAirData = {
+            isLiveOverride: raw.isLiveOverride ?? false,
+            isNetworkAvailable: true,
+            title: cur.title || "Radio 90 FM Live",
+            description: cur.description || "Voice of Amal Jyothi",
+            presenter: cur.presenter || "Radio 90 FM",
+            nextTitle: next ? next.title : null,
+            nextPresenter: next ? next.presenter : null,
+            phone: contacts.phone || "9496345029",
+            whatsapp: contacts.whatsapp || "9048389090",
+            enableCall: contacts.enableCall ?? true,
+            enableWhatsapp: contacts.enableWhatsapp ?? true,
+          };
+
+          setOnAir(parsedOnAir);
           setNetworkError(false);
         }
       }
@@ -150,7 +135,6 @@ export default function RootPwaHomePage() {
   };
 
   const fetchSchedule = async () => {
-    setLoadingSchedule(true);
     try {
       const res = await fetch("/api/v1/public/schedule");
       if (res.ok) {
@@ -213,12 +197,12 @@ export default function RootPwaHomePage() {
   // Days helper
   const daysList = [
     { short: "MON", full: "Monday" },
-    { short: "TUE", intVal: 1, full: "Tuesday" },
-    { short: "WED", intVal: 2, full: "Wednesday" },
-    { short: "THU", intVal: 3, full: "Thursday" },
-    { short: "FRI", intVal: 4, full: "Friday" },
-    { short: "SAT", intVal: 5, full: "Saturday" },
-    { short: "SUN", intVal: 6, full: "Sunday" },
+    { short: "TUE", full: "Tuesday" },
+    { short: "WED", full: "Wednesday" },
+    { short: "THU", full: "Thursday" },
+    { short: "FRI", full: "Friday" },
+    { short: "SAT", full: "Saturday" },
+    { short: "SUN", full: "Sunday" },
   ];
 
   const formatMinutesToTime = (mins: number) => {
@@ -249,8 +233,13 @@ export default function RootPwaHomePage() {
     return dayProgs;
   }, [programs, selectedDay, searchQuery]);
 
-  const activePhone = onAir?.phone || stationConfig?.defaultPhone || "9496345029";
-  const activeWhatsapp = onAir?.whatsapp || stationConfig?.defaultWhatsapp || "9048389090";
+  const activePhone = (onAir?.phone && onAir.phone !== "9496345029")
+    ? onAir.phone
+    : (stationConfig?.defaultPhone || onAir?.phone || "9496345029");
+
+  const activeWhatsapp = (onAir?.whatsapp && onAir.whatsapp !== "9048389090")
+    ? onAir.whatsapp
+    : (stationConfig?.defaultWhatsapp || onAir?.whatsapp || "9048389090");
 
   return (
     <div className="relative min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-between font-sans selection:bg-[#E50914] selection:text-white overflow-x-hidden">
@@ -271,7 +260,7 @@ export default function RootPwaHomePage() {
         <div className="absolute -bottom-[20%] left-[20%] w-[500px] h-[500px] bg-radial from-[#E50914]/15 to-transparent rounded-full blur-3xl" />
       </div>
 
-      {/* Main Content Container (Mobile-App Frame styling) */}
+      {/* Main Content Container (Mobile App Frame styling) */}
       <main className="relative z-10 w-full max-w-md min-h-screen flex flex-col pb-24 px-4 pt-4">
         {/* LISTEN SCREEN (HOME) */}
         {activeTab === "listen" && (
@@ -281,8 +270,8 @@ export default function RootPwaHomePage() {
               <Image
                 src="/icon.png"
                 alt="Radio 90 FM Logo"
-                width={240}
-                height={120}
+                width={250}
+                height={125}
                 className="object-contain drop-shadow-[0_10px_25px_rgba(229,9,20,0.3)] transition-transform duration-300 hover:scale-105"
                 priority
               />
@@ -317,7 +306,9 @@ export default function RootPwaHomePage() {
                     <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
                       {onAir?.title || "Radio 90 FM Live"}
                     </h2>
-                    <p className="text-xs text-[#A3A3A3]">Radio 90: Voice of Amal Jyothi</p>
+                    <p className="text-xs text-[#A3A3A3]">
+                      {onAir?.presenter ? `Hosted by ${onAir.presenter}` : "Radio 90: Voice of Amal Jyothi"}
+                    </p>
 
                     {/* Studio Communication Action Buttons */}
                     <div className="pt-2 flex items-center justify-center space-x-3 w-full">
@@ -361,7 +352,9 @@ export default function RootPwaHomePage() {
                     <h2 className="text-xl font-bold text-white tracking-wide line-clamp-1">
                       {onAir?.nextTitle || "Stay Tuned"}
                     </h2>
-                    <p className="text-xs text-[#A3A3A3]">Radio 90: Voice of Amal Jyothi</p>
+                    <p className="text-xs text-[#A3A3A3]">
+                      {onAir?.nextPresenter ? `Hosted by ${onAir.nextPresenter}` : "Radio 90: Voice of Amal Jyothi"}
+                    </p>
                     <span className="px-3 py-1 bg-white/5 rounded-lg text-[11px] text-white/60">
                       Starts following current show
                     </span>
@@ -527,7 +520,9 @@ export default function RootPwaHomePage() {
                       </div>
 
                       <h3 className="text-base font-bold text-white mb-1">{prog.title}</h3>
-                      <p className="text-xs text-[#A3A3A3] mb-2">Radio 90: Voice of Amal Jyothi</p>
+                      <p className="text-xs text-[#A3A3A3] mb-2">
+                        {prog.presenter ? `Presenter: ${prog.presenter}` : "Radio 90: Voice of Amal Jyothi"}
+                      </p>
                       {prog.description && <p className="text-xs text-white/70 line-clamp-2">{prog.description}</p>}
                     </div>
                   );
@@ -645,86 +640,14 @@ export default function RootPwaHomePage() {
             </div>
           </div>
         )}
-
-        {/* SETTINGS SCREEN */}
-        {activeTab === "settings" && (
-          <div className="flex-1 flex flex-col space-y-5 pt-2 overflow-y-auto">
-            <h1 className="text-xl font-bold text-white">Notification Settings</h1>
-
-            {/* Master Switch */}
-            <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 flex justify-between items-center">
-              <div>
-                <p className="text-sm font-bold text-white">Allow Notifications</p>
-                <p className="text-xs text-white/60">Enable or disable all app notifications</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={notifSettings.enableNotifications}
-                onChange={(e) => saveSettings({ ...notifSettings, enableNotifications: e.target.checked })}
-                className="w-5 h-5 accent-[#E50914]"
-              />
-            </div>
-
-            {/* Reminders & Alerts */}
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-[#E50914] uppercase tracking-wider">Show Reminders & Live Alerts</p>
-              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Program Start Reminders</p>
-                    <p className="text-xs text-white/60">Get notified before scheduled shows begin</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notifSettings.enableShowReminders}
-                    onChange={(e) => saveSettings({ ...notifSettings, enableShowReminders: e.target.checked })}
-                    className="w-5 h-5 accent-[#E50914]"
-                  />
-                </div>
-
-                <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Live Broadcast Alerts</p>
-                    <p className="text-xs text-white/60">Notify when special live programs go on-air</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notifSettings.enableLiveAlerts}
-                    onChange={(e) => saveSettings({ ...notifSettings, enableLiveAlerts: e.target.checked })}
-                    className="w-5 h-5 accent-[#E50914]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Quiet Hours */}
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-[#E50914] uppercase tracking-wider">Quiet Hours (Do Not Disturb)</p>
-              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 space-y-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Quiet Hours</p>
-                    <p className="text-xs text-white/60">Silence all notifications during specified times</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notifSettings.quietHoursEnabled}
-                    onChange={(e) => saveSettings({ ...notifSettings, quietHoursEnabled: e.target.checked })}
-                    className="w-5 h-5 accent-[#E50914]"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* FIXED TRANSLUCENT BOTTOM NAVIGATION BAR */}
+      {/* FIXED TRANSLUCENT BOTTOM NAVIGATION BAR (LISTEN, SCHEDULE, ABOUT) */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-4 pt-1 pointer-events-auto">
         <div className="w-full max-w-md bg-black/60 backdrop-blur-2xl border border-white/15 rounded-3xl px-3 py-2 flex justify-around items-center shadow-2xl">
           <button
             onClick={() => setActiveTab("listen")}
-            className={`flex flex-col items-center space-y-1 py-1 px-4 rounded-2xl transition-all ${
+            className={`flex flex-col items-center space-y-1 py-1 px-6 rounded-2xl transition-all ${
               activeTab === "listen" ? "text-[#E50914]" : "text-white/60 hover:text-white"
             }`}
           >
@@ -736,7 +659,7 @@ export default function RootPwaHomePage() {
 
           <button
             onClick={() => setActiveTab("schedule")}
-            className={`flex flex-col items-center space-y-1 py-1 px-4 rounded-2xl transition-all ${
+            className={`flex flex-col items-center space-y-1 py-1 px-6 rounded-2xl transition-all ${
               activeTab === "schedule" ? "text-[#E50914]" : "text-white/60 hover:text-white"
             }`}
           >
@@ -748,7 +671,7 @@ export default function RootPwaHomePage() {
 
           <button
             onClick={() => setActiveTab("about")}
-            className={`flex flex-col items-center space-y-1 py-1 px-4 rounded-2xl transition-all ${
+            className={`flex flex-col items-center space-y-1 py-1 px-6 rounded-2xl transition-all ${
               activeTab === "about" ? "text-[#E50914]" : "text-white/60 hover:text-white"
             }`}
           >
@@ -756,19 +679,6 @@ export default function RootPwaHomePage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-[10px] font-bold">About</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`flex flex-col items-center space-y-1 py-1 px-4 rounded-2xl transition-all ${
-              activeTab === "settings" ? "text-[#E50914]" : "text-white/60 hover:text-white"
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-[10px] font-bold">Settings</span>
           </button>
         </div>
       </nav>
