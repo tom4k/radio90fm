@@ -49,6 +49,39 @@ export default function DashboardPage() {
   const [resetUserSuccess, setResetUserSuccess] = useState("");
   const [resettingUserPass, setResettingUserPass] = useState(false);
 
+  // PWA Install Prompt State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone
+      ) {
+        setIsStandalone(true);
+      }
+
+      const handleBeforeInstallPrompt = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+      };
+
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      return () =>
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    }
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      setDeferredPrompt(null);
+    }
+  };
+
   // Audio player state
   const [streamState, setStreamState] = useState<"idle" | "buffering" | "playing">("idle");
   const [audioVolume, setAudioVolume] = useState(0.8);
@@ -952,6 +985,16 @@ export default function DashboardPage() {
                   {currentUser.email}
                 </span>
               </div>
+            )}
+
+            {deferredPrompt && (
+              <button
+                onClick={handleInstallPwa}
+                className="text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white px-3 py-1.5 rounded-lg transition shadow-md flex items-center gap-1.5 animate-pulse cursor-pointer"
+                title="Install Radio 90 Admin App"
+              >
+                <span>📱</span> Install App
+              </button>
             )}
 
             <button
