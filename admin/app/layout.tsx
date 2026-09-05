@@ -3,13 +3,13 @@ import "./globals.css";
 import PwaRegister from "./pwa-register";
 
 export const metadata: Metadata = {
-  title: "Radio 90 FM - Administration Portal",
-  description: "Web Administration & Broadcast Control Console for Radio 90 FM",
+  title: "Radio 90 FM — Voice of Amal Jyothi",
+  description: "Official Web App & Live Radio Player for Radio 90 FM • Voice of Amal Jyothi",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Radio 90 Admin",
+    title: "Radio 90 FM",
   },
   formatDetection: {
     telephone: false,
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#dc2626",
+  themeColor: "#e50914",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -43,7 +43,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="antialiased bg-neutral-950 text-neutral-100 min-h-screen">
+      <body className="antialiased bg-[#0a0a0a] text-white min-h-screen">
         <PwaRegister />
         {children}
       </body>

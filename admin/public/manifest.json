@@ -1,14 +1,14 @@
 {
-  "name": "Radio 90 FM Admin Portal",
-  "short_name": "Radio 90 Admin",
-  "description": "Web Administration & Broadcast Control Console for Radio 90 FM",
-  "start_url": "/dashboard",
+  "name": "Radio 90 FM — Voice of Amal Jyothi",
+  "short_name": "Radio 90 FM",
+  "description": "Official Web App & Live Radio Player for Radio 90 FM • Voice of Amal Jyothi",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#09090b",
-  "theme_color": "#dc2626",
-  "categories": ["utilities", "productivity", "entertainment"],
+  "background_color": "#0a0a0a",
+  "theme_color": "#e50914",
+  "categories": ["entertainment", "music", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

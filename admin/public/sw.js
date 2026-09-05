@@ -1,7 +1,8 @@
-const CACHE_NAME = "radio90-admin-v2";
+const CACHE_NAME = "radio90-pwa-v3";
 const STATIC_ASSETS = [
   "/manifest.json",
   "/logo.png",
+  "/icon.png",
   "/appicon.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
@@ -9,7 +10,7 @@ const STATIC_ASSETS = [
   "/icons/maskable-icon-512x512.png"
 ];
 
-// Install Event - Pre-cache Static Assets only (No protected HTML pages)
+// Install Event - Pre-cache Static Assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
