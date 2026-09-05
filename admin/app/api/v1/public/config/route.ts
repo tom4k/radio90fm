@@ -52,6 +52,7 @@ export async function GET() {
           spotify: config.spotifyUrl,
           x: config.xUrl,
         },
+        settingsEnabled: config.settingsEnabled ?? true,
         configVersion: config.configVersion,
       },
     });

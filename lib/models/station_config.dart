@@ -16,6 +16,7 @@ class StationConfig {
   final String youtubeUrl;
   final String spotifyUrl;
   final String twitterUrl;
+  final bool settingsEnabled;
   final int configVersion;
 
   StationConfig({
@@ -33,6 +34,7 @@ class StationConfig {
     required this.youtubeUrl,
     required this.spotifyUrl,
     required this.twitterUrl,
+    required this.settingsEnabled,
     required this.configVersion,
   });
 
@@ -52,6 +54,7 @@ class StationConfig {
       youtubeUrl: AppConstants.youtubeUrl,
       spotifyUrl: AppConstants.spotifyUrl,
       twitterUrl: AppConstants.twitterUrl,
+      settingsEnabled: true,
       configVersion: 1,
     );
   }
@@ -77,6 +80,7 @@ class StationConfig {
       youtubeUrl: socials['youtube'] ?? AppConstants.youtubeUrl,
       spotifyUrl: socials['spotify'] ?? AppConstants.spotifyUrl,
       twitterUrl: socials['x'] ?? AppConstants.twitterUrl,
+      settingsEnabled: json['settingsEnabled'] ?? station['settingsEnabled'] ?? true,
       configVersion: json['configVersion'] ?? 1,
     );
   }
@@ -105,6 +109,7 @@ class StationConfig {
         'spotify': spotifyUrl,
         'x': twitterUrl,
       },
+      'settingsEnabled': settingsEnabled,
       'configVersion': configVersion,
     };
   }

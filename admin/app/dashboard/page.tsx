@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [fallbackUrl, setFallbackUrl] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [settingsEnabled, setSettingsEnabled] = useState(true);
   const [msg, setMsg] = useState("");
 
   // New program state
@@ -447,6 +448,7 @@ export default function DashboardPage() {
             setFallbackUrl(fUrl);
             setPhone(pNum);
             setWhatsapp(wNum);
+            setSettingsEnabled(stationData.data.settingsEnabled ?? true);
           }
         }
       } catch (err) {
@@ -564,6 +566,7 @@ export default function DashboardPage() {
           fallbackStreamUrl: fallbackUrl,
           defaultPhone: phone,
           defaultWhatsapp: whatsapp,
+          settingsEnabled,
         }),
       });
       const data = await res.json();
@@ -2397,11 +2400,33 @@ export default function DashboardPage() {
                   />
                 </div>
 
+                <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex items-center justify-between mt-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">Mobile App Settings Screen</h4>
+                    <p className="text-xs text-neutral-400">
+                      Enable or disable the Settings tab in the mobile app bottom navigation bar.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsEnabled(!settingsEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      settingsEnabled ? "bg-red-600" : "bg-neutral-700"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
                 <button
                   type="submit"
                   className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition"
                 >
-                  Save Contacts
+                  Save Station Settings
                 </button>
               </form>
             </div>

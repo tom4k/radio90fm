@@ -22,13 +22,6 @@ class RadioApp extends ConsumerStatefulWidget {
 class _RadioAppState extends ConsumerState<RadioApp> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    ListenScreen(),
-    ScheduleScreen(),
-    AboutScreen(),
-    NotificationSettingsScreen(),
-  ];
-
   void _showAppUpdateDialog(BuildContext context, AppUpdateAlertData alertData) {
     showDialog(
       context: context,
@@ -96,6 +89,38 @@ class _RadioAppState extends ConsumerState<RadioApp> {
       }
     });
 
+    final configAsync = ref.watch(stationConfigProvider);
+    final bool settingsEnabled = configAsync.value?.settingsEnabled ?? true;
+
+    final List<Widget> activeScreens = [
+      const ListenScreen(),
+      const ScheduleScreen(),
+      const AboutScreen(),
+      if (settingsEnabled) const NotificationSettingsScreen(),
+    ];
+
+    final List<BottomNavigationBarItem> navItems = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.radio_rounded),
+        label: 'Listen',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_month_rounded),
+        label: 'Schedule',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.info_outline_rounded),
+        label: 'About',
+      ),
+      if (settingsEnabled)
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.settings_rounded),
+          label: 'Settings',
+        ),
+    ];
+
+    final safeIndex = _currentIndex >= activeScreens.length ? 0 : _currentIndex;
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
@@ -104,8 +129,8 @@ class _RadioAppState extends ConsumerState<RadioApp> {
         backgroundColor: Colors.transparent,
         body: LiquidBackground(
           child: IndexedStack(
-            index: _currentIndex,
-            children: _screens,
+            index: safeIndex,
+            children: activeScreens,
           ),
         ),
         bottomNavigationBar: ClipRRect(
@@ -114,7 +139,7 @@ class _RadioAppState extends ConsumerState<RadioApp> {
             child: BottomNavigationBar(
               backgroundColor: Colors.black.withValues(alpha: 0.45),
               elevation: 0,
-              currentIndex: _currentIndex,
+              currentIndex: safeIndex,
               type: BottomNavigationBarType.fixed,
               selectedItemColor: AppTheme.primaryRed,
               unselectedItemColor: Colors.white60,
@@ -125,24 +150,7 @@ class _RadioAppState extends ConsumerState<RadioApp> {
                   _currentIndex = index;
                 });
               },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.radio_rounded),
-                  label: 'Listen',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.calendar_month_rounded),
-                  label: 'Schedule',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.info_outline_rounded),
-                  label: 'About',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.settings_rounded),
-                  label: 'Settings',
-                ),
-              ],
+              items: navItems,
             ),
           ),
         ),

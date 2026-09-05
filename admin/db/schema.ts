@@ -54,6 +54,7 @@ export const stationConfig = pgTable("station_config", {
     .notNull()
     .default("https://twitter.com/Radio90FM_AJCE"),
   timezone: text("timezone").notNull().default("Asia/Kolkata"),
+  settingsEnabled: boolean("settings_enabled").notNull().default(true),
   configVersion: integer("config_version").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
