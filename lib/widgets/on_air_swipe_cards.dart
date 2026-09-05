@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:radio90fm/app/theme.dart';
 import 'package:radio90fm/models/on_air_data.dart';
+import 'package:radio90fm/providers/app_providers.dart';
 import 'package:radio90fm/widgets/liquid_glass_card.dart';
 import 'package:radio90fm/widgets/live_contact_actions.dart';
 
-class OnAirSwipeCards extends StatefulWidget {
+class OnAirSwipeCards extends ConsumerStatefulWidget {
   final OnAirData onAir;
 
   const OnAirSwipeCards({super.key, required this.onAir});
 
   @override
-  State<OnAirSwipeCards> createState() => _OnAirSwipeCardsState();
+  ConsumerState<OnAirSwipeCards> createState() => _OnAirSwipeCardsState();
 }
 
-class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
+class _OnAirSwipeCardsState extends ConsumerState<OnAirSwipeCards> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -221,12 +223,22 @@ class _OnAirSwipeCardsState extends State<OnAirSwipeCards> {
           const SizedBox(height: 14),
 
           // Live Communication Buttons
-          LiveContactActions(
-            phone: onAir.phone,
-            whatsapp: onAir.whatsapp,
-            enableCall: onAir.enableCall,
-            enableWhatsapp: onAir.enableWhatsapp,
-          ),
+          (() {
+            final config = ref.watch(stationConfigProvider).value;
+            final String activePhone = (onAir.phone.isNotEmpty && onAir.phone != '9496345029')
+                ? onAir.phone
+                : (config?.phone.isNotEmpty == true ? config!.phone : onAir.phone);
+            final String activeWhatsapp = (onAir.whatsapp.isNotEmpty && onAir.whatsapp != '9048389090')
+                ? onAir.whatsapp
+                : (config?.whatsapp.isNotEmpty == true ? config!.whatsapp : onAir.whatsapp);
+
+            return LiveContactActions(
+              phone: activePhone,
+              whatsapp: activeWhatsapp,
+              enableCall: onAir.enableCall,
+              enableWhatsapp: onAir.enableWhatsapp,
+            );
+          })(),
         ],
       ),
     );

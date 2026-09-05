@@ -80,8 +80,12 @@ export async function GET() {
 
     if (activeOverrides.length > 0) {
       const override = activeOverrides[0];
-      const resolvedPhone = override.phoneNumber || config.defaultPhone;
-      const resolvedWhatsapp = override.whatsappNumber || config.defaultWhatsapp;
+      const resolvedPhone = (override.phoneNumber && override.phoneNumber.trim() !== "" && override.phoneNumber.trim() !== "9496345029")
+        ? override.phoneNumber.trim()
+        : config.defaultPhone;
+      const resolvedWhatsapp = (override.whatsappNumber && override.whatsappNumber.trim() !== "" && override.whatsappNumber.trim() !== "9048389090")
+        ? override.whatsappNumber.trim()
+        : config.defaultWhatsapp;
 
       return NextResponse.json({
         success: true,
@@ -138,8 +142,26 @@ export async function GET() {
       }
     }
 
-    const resolvedPhone = current?.phoneNumber || config.defaultPhone;
-    const resolvedWhatsapp = current?.whatsappNumber || config.defaultWhatsapp;
+    const getPhone = (progPhone: string | null | undefined) => {
+      if (!progPhone || !progPhone.trim()) return config.defaultPhone;
+      const p = progPhone.trim();
+      if (p === "9496345029" && config.defaultPhone && config.defaultPhone !== "9496345029") {
+        return config.defaultPhone;
+      }
+      return p;
+    };
+
+    const getWhatsapp = (progWhatsapp: string | null | undefined) => {
+      if (!progWhatsapp || !progWhatsapp.trim()) return config.defaultWhatsapp;
+      const w = progWhatsapp.trim();
+      if (w === "9048389090" && config.defaultWhatsapp && config.defaultWhatsapp !== "9048389090") {
+        return config.defaultWhatsapp;
+      }
+      return w;
+    };
+
+    const resolvedPhone = getPhone(current?.phoneNumber);
+    const resolvedWhatsapp = getWhatsapp(current?.whatsappNumber);
 
     return NextResponse.json({
       success: true,
