@@ -7,9 +7,9 @@ export default function PwaRegister() {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         const path = window.location.pathname;
-        const isAdminRoute = path.startsWith("/dashboard") || path.startsWith("/login");
+        const isAdminRoute = path.startsWith("/dashboard");
         const swScript = isAdminRoute ? "/sw-admin.js" : "/sw.js";
-        const swScope = "/";
+        const swScope = isAdminRoute ? "/dashboard/" : "/";
 
         navigator.serviceWorker
           .register(swScript, { scope: swScope })

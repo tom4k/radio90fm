@@ -4,7 +4,7 @@
   "short_name": "Radio 90 Admin",
   "description": "Web Administration & Broadcast Control Console for Radio 90 FM",
   "start_url": "/dashboard",
-  "scope": "/",
+  "scope": "/dashboard/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#09090b",

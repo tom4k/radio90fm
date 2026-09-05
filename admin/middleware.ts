@@ -20,10 +20,25 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Legacy /login Route -> Redirect to /dashboard/login (or /dashboard if authenticated)
+  if (pathname === "/login") {
+    if (isValidSession) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/dashboard/login", request.url));
+  }
+
   // Protected Admin Dashboard Route
   if (pathname.startsWith("/dashboard")) {
+    if (pathname === "/dashboard/login") {
+      if (isValidSession) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+      return NextResponse.next();
+    }
+
     if (!isValidSession) {
-      const loginUrl = new URL("/login", request.url);
+      const loginUrl = new URL("/dashboard/login", request.url);
       const redirectResponse = NextResponse.redirect(loginUrl);
       redirectResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
       return redirectResponse;
@@ -33,14 +48,6 @@ export async function middleware(request: NextRequest) {
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
     return response;
-  }
-
-  // Login Page Route (Redirect to dashboard if already logged in)
-  if (pathname === "/login") {
-    if (isValidSession) {
-      const dashboardUrl = new URL("/dashboard", request.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
   }
 
   // Protected Admin APIs (/api/v1/admin/* except /api/v1/admin/auth/login)
