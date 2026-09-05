@@ -415,7 +415,7 @@ export default function RootPwaHomePage() {
                         {onAir?.title || "Radio 90 FM Live"}
                       </h2>
                       <p className="text-xs text-[#A3A3A3]">
-                        {onAir?.presenter ? `Hosted by ${onAir.presenter}` : "Radio 90: Voice of Amal Jyothi"}
+                        {"Radio 90: Voice of Amal Jyothi"}
                       </p>
 
                       {/* Studio Communication Action Buttons */}
