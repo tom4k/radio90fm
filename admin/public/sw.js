@@ -1,6 +1,7 @@
-const CACHE_NAME = "radio90-pwa-v3";
+const CACHE_NAME = "radio90-pwa-v4";
 const STATIC_ASSETS = [
   "/manifest.json",
+  "/manifest-admin.json",
   "/logo.png",
   "/icon.png",
   "/appicon.png",
