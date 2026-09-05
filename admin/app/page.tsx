@@ -70,6 +70,66 @@ export default function RootPwaHomePage() {
   const [hasAutoScrolled, setHasAutoScrolled] = useState<boolean>(false);
   const activeProgramRef = useRef<HTMLDivElement | null>(null);
 
+  // PWA Install Prompt Dialog States
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = useState<boolean>(false);
+  const [isIosBrowser, setIsIosBrowser] = useState<boolean>(false);
+
+  // PWA Install Listener & Detection
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isStandaloneMode =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+
+      if (isStandaloneMode) {
+        return;
+      }
+
+      const dismissed = sessionStorage.getItem("radio90_pwa_prompt_dismissed");
+      if (dismissed === "true") {
+        return;
+      }
+
+      const ua = window.navigator.userAgent;
+      const isIos = /iphone|ipad|ipod/i.test(ua);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+
+      if (isIos && isSafari) {
+        setIsIosBrowser(true);
+        setShowInstallModal(true);
+        return;
+      }
+
+      const handleBeforeInstallPrompt = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setShowInstallModal(true);
+      };
+
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    }
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setDeferredPrompt(null);
+        setShowInstallModal(false);
+      }
+    }
+  };
+
+  const handleDismissInstall = () => {
+    setShowInstallModal(false);
+    try {
+      sessionStorage.setItem("radio90_pwa_prompt_dismissed", "true");
+    } catch (e) {}
+  };
+
   // Reset auto-scroll flag whenever day tab or screen tab changes
   useEffect(() => {
     setHasAutoScrolled(false);
@@ -348,6 +408,71 @@ export default function RootPwaHomePage() {
         preload="none"
       />
 
+      {/* INSTALL PWA DIALOG MODAL */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-[#1E1B2E] border border-[#8B5CF6]/50 rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center space-y-4 relative">
+            {/* Close Button */}
+            <button
+              onClick={handleDismissInstall}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all"
+              aria-label="Close"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* App Icon Header */}
+            <div className="w-20 h-20 mx-auto rounded-2xl overflow-hidden border-2 border-[#E50914] p-1 shadow-lg shadow-[#E50914]/40 bg-[#141414]">
+              <Image src="/icon.png" alt="App Icon" width={80} height={80} className="w-full h-full object-contain" />
+            </div>
+
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-white tracking-wide">Install Radio 90 FM</h2>
+              <p className="text-xs text-[#E50914] font-semibold">Voice of Amal Jyothi</p>
+            </div>
+
+            {/* Content / Instructions */}
+            {isIosBrowser ? (
+              <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-xs text-white/80 space-y-2 text-left">
+                <p className="font-semibold text-white">To install on your iPhone/iPad:</p>
+                <ol className="list-decimal list-inside space-y-1 text-white/70">
+                  <li>Tap the <strong className="text-white">Share</strong> button in Safari toolbar.</li>
+                  <li>Scroll down and tap <strong className="text-white">&apos;Add to Home Screen&apos;</strong>.</li>
+                </ol>
+              </div>
+            ) : (
+              <p className="text-xs text-white/70 leading-relaxed">
+                Add Radio 90 FM to your home screen for instant 1-tap playback and full app experience!
+              </p>
+            )}
+
+            {/* Dialog Actions */}
+            <div className="pt-2 flex flex-col space-y-2">
+              {!isIosBrowser && deferredPrompt && (
+                <button
+                  onClick={handleInstallPwa}
+                  className="w-full py-3 px-4 rounded-xl bg-[#E50914] hover:bg-[#ff1e27] text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-[#E50914]/40 flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Install App</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleDismissInstall}
+                className="w-full py-2 text-xs font-semibold text-white/60 hover:text-white transition-all"
+              >
+                {isIosBrowser ? "Got It" : "Maybe Later"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dynamic Animated Liquid Background Effect */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] bg-radial from-[#E50914]/25 via-[#E50914]/5 to-transparent rounded-full blur-3xl animate-pulse" />
@@ -466,7 +591,7 @@ export default function RootPwaHomePage() {
                           {onAir.nextTitle}
                         </h2>
                         <p className="text-xs text-[#A3A3A3]">
-                          {onAir.nextPresenter ? `Hosted by ${onAir.nextPresenter}` : "Radio 90: Voice of Amal Jyothi"}
+                          {"Radio 90: Voice of Amal Jyothi"}
                         </p>
                         <span className="px-3 py-1 bg-white/5 rounded-lg text-[11px] text-white/60">
                           Starts following current show
